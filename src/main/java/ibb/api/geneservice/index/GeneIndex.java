@@ -2,6 +2,7 @@ package ibb.api.geneservice.index;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -10,6 +11,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
 import ibb.api.geneservice.model.Gene;
 import ibb.api.geneservice.parser.GeneParser;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -26,9 +28,12 @@ public class GeneIndex {
             Stream<Gene> genes = GeneParser.parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
-            createIndexIfNotExists(species);
+
+            Log.infov("Loading genes for species {0} from {1}", species, path.toString());
             String indexName = getIndexName(species);
+            AtomicInteger counter = new AtomicInteger(0);
             genes.forEach(gene -> {
+                counter.incrementAndGet();
                 ingester.add(op -> op
                     .index(idx -> idx
                         .index(indexName)
@@ -36,21 +41,28 @@ public class GeneIndex {
                         .document(gene)
                     ));
             });
+            Log.infov("Loaded {0} genes for species {1}", counter.get(), species);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean exists(String species) {
+        String indexName = getIndexName(species);
+        try {
+            return esClient.indices().exists(i -> i.index(indexName)).value();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public String getIndexName(String species) {
-        return indexPrefix + "-" + species.toLowerCase();
+        return indexPrefix + "-" + species.toLowerCase() + "-genes";
     }
 
-    public void createIndexIfNotExists(String species) {
+    public void createIndex(String species) {
         String indexName = getIndexName(species);
         try {
-            if (esClient.indices().exists(i -> i.index(indexName)).value()) {
-                return;
-            }
             esClient.indices().create(i -> i.index(indexName));
         } catch (IOException e) {
             throw new RuntimeException(e);

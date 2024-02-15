@@ -1,3 +1,6 @@
+data/*
+!data/.keep
+
 #Maven
 target/
 pom.xml.tag
