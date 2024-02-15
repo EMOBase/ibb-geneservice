@@ -1,0 +1,6 @@
+
+
+NW_015450206.1	GenBank	gene	70347	73823	0	-	.	ID=gene0;locus_tag=TcasGA2_TC016174;gene_synonym=GLEAN_16174;part=1%2F1;partial=true;gbkey=Gene;Name=GLEAN_16174;Dbxref=BEETLEBASE:TC016174;
+
+    NW_015450206.1	GenBank	mRNA	70347	73823	0	-	.	ID=rna0;protein_id=gnl|WGS:AAJJ|TC016174-PA|gb|EFA12439;transcript_id=gnl|WGS:AAJJ|TC016174-RA;gbkey=mRNA;Name=TC016174-RA;Dbxref=iBeetle:TC016174;product=Retrovirus-related Pol polyprotein from transposon 297-like Protein;Parent=gene0;gene_synonym=GLEAN_16174;
+
