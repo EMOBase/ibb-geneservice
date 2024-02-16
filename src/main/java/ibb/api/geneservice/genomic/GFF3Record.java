@@ -1,4 +1,4 @@
-package ibb.api.geneservice.parser;
+package ibb.api.geneservice.genomic;
 
 import java.util.Arrays;
 import java.util.Collections;

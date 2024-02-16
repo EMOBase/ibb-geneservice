@@ -7,7 +7,9 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-import ibb.api.geneservice.model.Gene;
+import ibb.api.geneservice.genomic.GFF3Record;
+import ibb.api.geneservice.genomic.Genomic;
+import ibb.api.geneservice.genomic.GenomicParser;
 
 public class GeneParserTest {
     private Path testDataDirectory = Path.of("src", "test", "resources", "gff");
@@ -15,10 +17,10 @@ public class GeneParserTest {
     @Test
     public void testIBBOGS3Head100() throws Exception {
         Path path = testDataDirectory.resolve("iBB_OGS3_head100.gff");
-        try (var stream = GeneParser.parse(path)) {
-            Gene[] genes = stream.toArray(Gene[]::new);
+        try (var stream = GenomicParser.parse(path)) {
+            Genomic[] genes = stream.toArray(Genomic[]::new);
             assertEquals(17, genes.length);
-            Gene gene = genes[0];
+            Genomic gene = genes[0];
 
             assertEquals("TC016174", gene.id);
 

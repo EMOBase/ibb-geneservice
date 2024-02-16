@@ -1,4 +1,4 @@
-package ibb.api.geneservice.index;
+package ibb.api.geneservice.genomic;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -9,14 +9,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
-import ibb.api.geneservice.model.Gene;
-import ibb.api.geneservice.parser.GeneParser;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class GeneIndex {
+public class GenomicIndex {
     @Inject
     ElasticsearchClient esClient;
 
@@ -25,7 +23,7 @@ public class GeneIndex {
 
     public void loadFromGFF(String species, Path path) throws IOException {
         try (
-            Stream<Gene> genes = GeneParser.parse(path);
+            Stream<Genomic> genes = GenomicParser.parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
 
@@ -46,7 +44,7 @@ public class GeneIndex {
     }
 
     public String getIndexName(String species) {
-        return indexPrefix + "-" + species.toLowerCase() + "-genes";
+        return indexPrefix + "-" + species.toLowerCase() + "-genomic";
     }
 
     public boolean exists(String species) throws IOException{

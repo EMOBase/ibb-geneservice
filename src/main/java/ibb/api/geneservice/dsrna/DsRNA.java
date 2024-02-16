@@ -1,4 +1,4 @@
-package ibb.api.geneservice.model;
+package ibb.api.geneservice.dsrna;
 
 import java.util.List;
 

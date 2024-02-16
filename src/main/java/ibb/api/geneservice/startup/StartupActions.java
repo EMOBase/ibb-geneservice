@@ -12,8 +12,9 @@ import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import ibb.api.geneservice.index.GeneIndex;
-import ibb.api.geneservice.index.SequenceIndex;
+import ibb.api.geneservice.genomic.GenomicIndex;
+import ibb.api.geneservice.sequence.SequenceIndex;
+import ibb.api.geneservice.sequence.SequenceType;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -27,7 +28,7 @@ public class StartupActions {
     String dataDir;
 
     @Inject
-    GeneIndex geneIndex;
+    GenomicIndex geneIndex;
 
     @Inject
     SequenceIndex sequenceIndex;
@@ -56,11 +57,14 @@ public class StartupActions {
             }
         }
 
-        Optional.ofNullable(fileMap.get("gff")).ifPresent(gffs -> loadGFFs(species, gffs));
-        List.of("cds", "rna", "protein").forEach(type -> {
-            Optional.ofNullable(fileMap.get(type))
-                .ifPresent(filesOfType -> loadSequences(species, type, filesOfType));
-        });
+        Optional.ofNullable(fileMap.get("gff"))
+            .ifPresent(gffs -> loadGFFs(species, gffs));
+        Optional.ofNullable(fileMap.get("cds"))
+            .ifPresent(cds -> loadSequences(species, SequenceType.CDS, cds));
+        Optional.ofNullable(fileMap.get("rna"))
+            .ifPresent(rnas -> loadSequences(species, SequenceType.RNA, rnas));
+        Optional.ofNullable(fileMap.get("protein"))
+            .ifPresent(proteins -> loadSequences(species, SequenceType.PROTEIN, proteins));
     }
 
     private void loadGFFs(String species, List<File> files) {
@@ -78,7 +82,7 @@ public class StartupActions {
         }
     }
 
-    private void loadSequences(String species, String type, List<File> files) {
+    private void loadSequences(String species, SequenceType type, List<File> files) {
         try {
             if (!sequenceIndex.exists(species, type)) {
                 sequenceIndex.createIndex(species, type);

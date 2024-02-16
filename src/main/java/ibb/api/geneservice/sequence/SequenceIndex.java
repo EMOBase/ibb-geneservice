@@ -1,4 +1,4 @@
-package ibb.api.geneservice.index;
+package ibb.api.geneservice.sequence;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -9,8 +9,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
-import ibb.api.geneservice.parser.FastaParser;
-import ibb.api.geneservice.parser.FastaRecord;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,7 +21,7 @@ public class SequenceIndex {
     @ConfigProperty(name = "geneservice.elasticsearch.index-prefix")
     String indexPrefix;
 
-    public void loadFromFasta(String species, String type, Path path) throws IOException {
+    public void loadFromFasta(String species, SequenceType type, Path path) throws IOException {
         try (
             Stream<FastaRecord> sequences = FastaParser.parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
@@ -45,15 +43,15 @@ public class SequenceIndex {
         }
     }
 
-    private String getIndexName(String species, String type) {
-        return indexPrefix + "-" + species.toLowerCase() + "-" + type + "-sequences";
+    private String getIndexName(String species, SequenceType type) {
+        return indexPrefix + "-" + species.toLowerCase() + "-" + type.name().toLowerCase() + "-sequences";
     }
 
-    public boolean exists(String species, String type) throws IOException {
+    public boolean exists(String species, SequenceType type) throws IOException {
         return esClient.indices().exists(i -> i.index(getIndexName(species, type))).value();
     }
 
-    public void createIndex(String species, String type) throws IOException {
+    public void createIndex(String species, SequenceType type) throws IOException {
         String indexName = getIndexName(species, type);
         esClient.indices().create(i -> i
             .index(indexName)
@@ -64,7 +62,7 @@ public class SequenceIndex {
             ));
     }
 
-    public void deleteIndexIfExists(String species, String type) throws IOException {
+    public void deleteIndexIfExists(String species, SequenceType type) throws IOException {
         String indexName = getIndexName(species, type);
         esClient.indices().delete(i -> i.index(indexName).ignoreUnavailable(true));
     }

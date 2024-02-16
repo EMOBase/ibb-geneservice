@@ -1,4 +1,4 @@
-package ibb.api.geneservice.parser;
+package ibb.api.geneservice.genomic;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -11,6 +11,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+
+import ibb.api.geneservice.parser.TextParser;
+import ibb.api.geneservice.parser.TextParserException;
 
 /**
  * GFF3 specification: http://gmod.org/wiki/GFF3

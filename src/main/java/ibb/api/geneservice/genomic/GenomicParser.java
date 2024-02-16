@@ -1,4 +1,4 @@
-package ibb.api.geneservice.parser;
+package ibb.api.geneservice.genomic;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -16,22 +16,22 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import ibb.api.geneservice.model.Gene;
+import ibb.api.geneservice.parser.TextParserException;
 
-public class GeneParser implements Iterator<Gene> {
+public class GenomicParser implements Iterator<Genomic> {
 
     /**
-     * Parse a GFF3 file into a stream of {@link Gene} objects.
+     * Parse a GFF3 file into a stream of {@link Genomic} objects.
      * @param path the path to the GFF3 file
-     * @return a stream of {@link Gene} objects
+     * @return a stream of {@link Genomic} objects
      * @throws IOException if an I/O error occurs
      * @throws TextParserException if the file is not a valid GFF3 file
      * @apiNote This method must be used within a try-with-resources statement or similar control structure to ensure that the stream's open file is closed promptly after the stream's operations have completed.
      */
-    public static Stream<Gene> parse(Path path) throws IOException {
+    public static Stream<Genomic> parse(Path path) throws IOException {
         var stream = GFF3Parser.parse(path);
         var gff3RecordIterator = stream.iterator();
-        var geneIterator = new GeneParser(gff3RecordIterator);
+        var geneIterator = new GenomicParser(gff3RecordIterator);
         return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(geneIterator, Spliterator.ORDERED),
             false
@@ -41,16 +41,16 @@ public class GeneParser implements Iterator<Gene> {
     private Iterator<GFF3Record> gff3RecordIterator;
     private int lineNumber = 0;
     private List<GFF3Record> gff3Records = new ArrayList<>();
-    private Gene current = null;
+    private Genomic current = null;
 
-    public GeneParser(Iterator<GFF3Record> gff3RecordIterator) {
+    public GenomicParser(Iterator<GFF3Record> gff3RecordIterator) {
         this.gff3RecordIterator = gff3RecordIterator;
     }
 
-    private Gene getNextGene() {
+    private Genomic getNextGene() {
         while (true) {
             if (!gff3RecordIterator.hasNext()) {
-                Gene gene = makeGene(gff3Records);
+                Genomic gene = makeGene(gff3Records);
                 gff3Records.clear();
                 return gene;
             }
@@ -58,7 +58,7 @@ public class GeneParser implements Iterator<Gene> {
             GFF3Record gff3Record = gff3RecordIterator.next();
             switch (gff3Record.getType()) {
                 case "gene":
-                    Gene gene = makeGene(gff3Records);
+                    Genomic gene = makeGene(gff3Records);
                     gff3Records.clear();
                     gff3Records.add(gff3Record);
                     if (gene != null) {
@@ -72,13 +72,13 @@ public class GeneParser implements Iterator<Gene> {
     }
 
     /**
-     * Make a {@link Gene} object from a block of {@link GFF3Record} objects.
+     * Make a {@link Genomic} object from a block of {@link GFF3Record} objects.
      * In the GFF3 format, a gene is represented by a block of records, where the first record is a "gene" record and the subsequent records are "mRNA", "CDS", etc. records that are children of the gene record.
      * @param gff3Records the list of {@link GFF3Record} objects
-     * @return a {@link Gene} object
+     * @return a {@link Genomic} object
      */
-    private Gene makeGene(List<GFF3Record> gff3Records) {
-        Gene gene = null;
+    private Genomic makeGene(List<GFF3Record> gff3Records) {
+        Genomic gene = null;
         String geneLocalId = null;
         Set<String> mRNALocalIds = new HashSet<>();
         for (GFF3Record record: gff3Records) {
@@ -86,7 +86,7 @@ public class GeneParser implements Iterator<Gene> {
                 case "gene":
                     geneLocalId = record.getId();
 
-                    gene = new Gene();
+                    gene = new Genomic();
                     gene.id = getGeneId(record);
                     gene.name = record.getAttributeFirstValue("description");
                     gene.referenceSeq = record.getSeqId();
@@ -136,8 +136,8 @@ public class GeneParser implements Iterator<Gene> {
     }
 
     @Override
-    public Gene next() {
-        Gene next = current;
+    public Genomic next() {
+        Genomic next = current;
         current = null;
         if (next == null) {
             next = getNextGene();

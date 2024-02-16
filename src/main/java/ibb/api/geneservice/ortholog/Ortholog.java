@@ -1,4 +1,4 @@
-package ibb.api.geneservice.model;
+package ibb.api.geneservice.ortholog;
 
 public class Ortholog {
     public String group;
