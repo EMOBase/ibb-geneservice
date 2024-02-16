@@ -51,6 +51,16 @@ public class FileTypes {
             .orElse(false);
     }
 
+    public static boolean isFlyBaseSynonymFile(File file) {
+        String name = file.getName().toLowerCase();
+        return name.startsWith("fb_synonym");
+    }
+
+    public static boolean isFlyBaseGeneRNAProteinMapFile(File file) {
+        String name = file.getName().toLowerCase();
+        return name.startsWith("fbgn_fbtr_fbpp");
+    }
+
     private static String ignoreGzip(String name) {
         return GZIP_EXTENSIONS.stream()
             .filter(ext -> name.endsWith(ext))
