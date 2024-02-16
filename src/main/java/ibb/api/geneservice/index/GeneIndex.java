@@ -23,7 +23,7 @@ public class GeneIndex {
     @ConfigProperty(name = "geneservice.elasticsearch.index-prefix")
     String indexPrefix;
 
-    public void loadFromGFF(String species, Path path) {
+    public void loadFromGFF(String species, Path path) throws IOException {
         try (
             Stream<Gene> genes = GeneParser.parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
@@ -42,17 +42,6 @@ public class GeneIndex {
                     ));
             });
             Log.infov("Loaded {0} genes for species {1}", counter.get(), species);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean exists(String species) {
-        String indexName = getIndexName(species);
-        try {
-            return esClient.indices().exists(i -> i.index(indexName)).value();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -60,21 +49,17 @@ public class GeneIndex {
         return indexPrefix + "-" + species.toLowerCase() + "-genes";
     }
 
-    public void createIndex(String species) {
-        String indexName = getIndexName(species);
-        try {
-            esClient.indices().create(i -> i.index(indexName));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public boolean exists(String species) throws IOException{
+        return esClient.indices().exists(i -> i.index(getIndexName(species))).value();
     }
 
-    public void deleteIndexIfExists(String species) {
+    public void createIndex(String species) throws IOException {
         String indexName = getIndexName(species);
-        try {
-            esClient.indices().delete(i -> i.index(indexName).ignoreUnavailable(true));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        esClient.indices().create(i -> i.index(indexName));
+    }
+
+    public void deleteIndexIfExists(String species) throws IOException {
+        String indexName = getIndexName(species);
+        esClient.indices().delete(i -> i.index(indexName).ignoreUnavailable(true));
     }
 }
