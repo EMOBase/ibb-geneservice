@@ -3,15 +3,23 @@ package ibb.api.geneservice.synonym;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import ibb.api.geneservice.parser.TextParser;
+import ibb.api.geneservice.parser.TextParserException;
 
 public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
+
+    AtomicInteger lineCount = new AtomicInteger(0);
 
     @Override
     public Stream<Synonym> parse(Path path) throws IOException {
         return parseText(path)
+            .map(line -> {
+                lineCount.incrementAndGet();
+                return line;
+            })
             .filter(line -> !isHeaderLine(line))
             .filter(line -> !line.isBlank())
             .map(this::parseLine)
@@ -24,7 +32,7 @@ public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
 
         String[] cols = line.split(delimiter);
         if (cols.length != 3) {
-            throw new IllegalArgumentException("FlyBase gene RNA protein map file must have 3 columns");
+            throw new TextParserException(lineCount.get(), "FlyBase gene RNA protein map file must have 3 columns");
         }
 
         String gene = cols[0];
