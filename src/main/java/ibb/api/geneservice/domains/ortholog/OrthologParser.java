@@ -1,4 +1,4 @@
-package ibb.api.geneservice.ortholog;
+package ibb.api.geneservice.domains.ortholog;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -9,12 +9,6 @@ import java.util.stream.Stream;
 import ibb.api.geneservice.parser.TextParser;
 
 public class OrthologParser implements TextParser<Ortholog> {
-
-    private String source;
-
-    public OrthologParser(String source) {
-        this.source = source;
-    }
 
     @Override
     public Stream<Ortholog> parse(Path path) throws IOException {
@@ -40,7 +34,6 @@ public class OrthologParser implements TextParser<Ortholog> {
             .map(String::trim)
             .map(gene -> {
                 Ortholog ortholog = new Ortholog();
-                ortholog.source = source;
                 ortholog.group = group;
                 ortholog.gene = gene;
                 return ortholog;

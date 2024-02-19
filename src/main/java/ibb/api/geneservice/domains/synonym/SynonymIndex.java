@@ -1,4 +1,4 @@
-package ibb.api.geneservice.ortholog;
+package ibb.api.geneservice.domains.synonym;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -9,41 +9,43 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
+import ibb.api.geneservice.parser.TextParser;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class OrthologIndex {
+public class SynonymIndex {
+    
     @Inject
     ElasticsearchClient esClient;
 
     @ConfigProperty(name = "geneservice.elasticsearch.index-prefix")
     String indexPrefix;
 
-    public void loadOrthologs(String source, Path path) throws IOException {
+    public void loadSynonyms(String species, Path path, TextParser<Synonym> parser) throws IOException {
         try (
-            Stream<Ortholog> orthologs = new OrthologParser(source).parse(path);
+            Stream<Synonym> synonyms = parser.parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
 
-            Log.infov("Loading {0} orthologs from {1}", source, path.toString());
-            String indexName = getIndexName(source);
+            Log.infov("Loading synonyms for species {0} from {1}", species, path.toString());
+            String indexName = getIndexName(species);
             AtomicInteger counter = new AtomicInteger(0);
-            orthologs.forEach(ortholog -> {
+            synonyms.forEach(synonym -> {
                 counter.incrementAndGet();
                 ingester.add(op -> op
                     .index(idx -> idx
                         .index(indexName)
-                        .document(ortholog)
+                        .document(synonym)
                     ));
             });
-            Log.infov("Loaded {0} {1} orthologs", counter.get(), source);
+            Log.infov("Loaded {0} synonyms for species {1}", counter.get(), species);
         }
     }
-
-    public String getIndexName(String source) {
-        return indexPrefix + "-orthologs-" + source.toLowerCase();
+    
+    public String getIndexName(String species) {
+        return indexPrefix + "-" + species.toLowerCase() + "-synonyms";
     }
 
     public boolean exists(String species) throws IOException{

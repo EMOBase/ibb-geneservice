@@ -7,16 +7,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import ibb.api.geneservice.ortholog.OrthologIndex;
+import ibb.api.geneservice.domains.ortholog.OrthologIndex;
+import ibb.api.geneservice.domains.ortholog.OrthologParser;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class OrthologLoader {
-    
-    @Inject
-    OrthologIndex orthologIndex;
 
     public void load(String source, File dir) {
         File[] files = dir.listFiles(File::isFile);
@@ -27,13 +24,13 @@ public class OrthologLoader {
 
     private void loadOrthologs(String source, List<File> files) {
         try {
-            if (!orthologIndex.exists(source)) {
-                orthologIndex.createIndex(source);
+            OrthologIndex index = new OrthologIndex(source);
+            if (!index.exists()) {
                 for (var file : files) {
-                    orthologIndex.loadOrthologs(source, file.toPath());
+                    index.load(file.toPath(), new OrthologParser());
                 };
             } else {
-                Log.infov("Index for ortholog source {0} already exists", source);
+                Log.infov("Orthologs for {0} already exists", source);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

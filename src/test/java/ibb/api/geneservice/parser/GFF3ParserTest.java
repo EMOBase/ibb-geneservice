@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import ibb.api.geneservice.genomic.GFF3Parser;
-import ibb.api.geneservice.genomic.GFF3Record;
+import ibb.api.geneservice.domains.genomic.GFF3Parser;
+import ibb.api.geneservice.domains.genomic.GFF3Record;
 
 public class GFF3ParserTest {
     

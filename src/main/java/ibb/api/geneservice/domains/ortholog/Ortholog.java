@@ -1,7 +1,6 @@
-package ibb.api.geneservice.ortholog;
+package ibb.api.geneservice.domains.ortholog;
 
 public class Ortholog {
     public String group;
-    public String source;
     public String gene;
 }

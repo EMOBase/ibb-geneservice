@@ -1,4 +1,4 @@
-package ibb.api.geneservice.synonym;
+package ibb.api.geneservice.domains.synonym;
 
 public class Synonym {
 

@@ -23,11 +23,11 @@ public class StartupActions {
     OrthologLoader orthologLoader;
 
     void init(@Observes StartupEvent event) {
-        Path allSpeciesDir = Path.of(dataDir, "species");
-        File[] speciesDirs = allSpeciesDir.toFile().listFiles(File::isDirectory);
-        for (File speciesDir : speciesDirs) {
-            speciesLoader.load(speciesDir.getName(), speciesDir);
-        }
+        // Path allSpeciesDir = Path.of(dataDir, "species");
+        // File[] speciesDirs = allSpeciesDir.toFile().listFiles(File::isDirectory);
+        // for (File speciesDir : speciesDirs) {
+        //     speciesLoader.load(speciesDir.getName(), speciesDir);
+        // }
 
         Path allOrthologsDir = Path.of(dataDir, "orthologs");
         File[] orthologsDirs = allOrthologsDir.toFile().listFiles(File::isDirectory);
@@ -35,5 +35,4 @@ public class StartupActions {
             orthologLoader.load(orthologsDir.getName(), orthologsDir);
         }
     }
-
 }

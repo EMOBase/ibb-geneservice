@@ -1,4 +1,4 @@
-package ibb.api.geneservice.genomic;
+package ibb.api.geneservice.domains.genomic;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

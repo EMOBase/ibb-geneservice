@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import ibb.api.geneservice.genomic.GenomicIndex;
-import ibb.api.geneservice.sequence.SequenceIndex;
-import ibb.api.geneservice.sequence.SequenceType;
-import ibb.api.geneservice.synonym.FlyBaseGeneRNAProteinMapParser;
-import ibb.api.geneservice.synonym.FlyBaseSynonymParser;
-import ibb.api.geneservice.synonym.SynonymIndex;
+import ibb.api.geneservice.domains.genomic.GenomicIndex;
+import ibb.api.geneservice.domains.sequence.SequenceIndex;
+import ibb.api.geneservice.domains.sequence.SequenceType;
+import ibb.api.geneservice.domains.synonym.FlyBaseGeneRNAProteinMapParser;
+import ibb.api.geneservice.domains.synonym.FlyBaseSynonymParser;
+import ibb.api.geneservice.domains.synonym.SynonymIndex;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

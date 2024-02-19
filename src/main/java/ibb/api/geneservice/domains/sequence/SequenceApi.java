@@ -1,4 +1,4 @@
-package ibb.api.geneservice.sequence;
+package ibb.api.geneservice.domains.sequence;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;

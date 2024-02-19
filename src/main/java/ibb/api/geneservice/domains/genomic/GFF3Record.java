@@ -1,4 +1,4 @@
-package ibb.api.geneservice.genomic;
+package ibb.api.geneservice.domains.genomic;
 
 import java.util.Arrays;
 import java.util.Collections;

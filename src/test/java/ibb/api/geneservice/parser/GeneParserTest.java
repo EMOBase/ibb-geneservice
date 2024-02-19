@@ -7,9 +7,9 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-import ibb.api.geneservice.genomic.GFF3Record;
-import ibb.api.geneservice.genomic.Genomic;
-import ibb.api.geneservice.genomic.GenomicParser;
+import ibb.api.geneservice.domains.genomic.GFF3Record;
+import ibb.api.geneservice.domains.genomic.Genomic;
+import ibb.api.geneservice.domains.genomic.GenomicParser;
 
 public class GeneParserTest {
     private Path testDataDirectory = Path.of("src", "test", "resources", "gff");
