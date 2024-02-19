@@ -23,7 +23,7 @@ public class GenomicIndex {
 
     public void loadFromGFF(String species, Path path) throws IOException {
         try (
-            Stream<Genomic> genes = GenomicParser.parse(path);
+            Stream<Genomic> genes = new GenomicParser().parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
 

@@ -21,7 +21,7 @@ public class GFF3ParserTest {
     @ValueSource(strings = { "iBB_OGS3_head100.gff", "iBB_OGS3_head100_compressed.gff.gz" })
     public void testIBBOGS3Head100(String fileName) throws Exception {
         Path path = testDataDirectory.resolve(fileName);
-        try (var stream = GFF3Parser.parse(path)) {
+        try (var stream = new GFF3Parser().parse(path)) {
             GFF3Record[] records = stream.toArray(GFF3Record[]::new);
             assertEquals(100, records.length);
             testEqualsGene0(records[0]);
@@ -31,7 +31,7 @@ public class GFF3ParserTest {
     @Test
     public void testIBBOGS3Head2Emptylines() throws Exception {
         Path path = testDataDirectory.resolve("iBB_OGS3_head2_emptylines.gff");
-        try (var stream = GFF3Parser.parse(path)) {
+        try (var stream = new GFF3Parser().parse(path)) {
             GFF3Record[] records = stream.toArray(GFF3Record[]::new);
             assertEquals(2, records.length);
             testEqualsGene0(records[0]);
@@ -41,7 +41,7 @@ public class GFF3ParserTest {
     @Test
     public void test8Columns() throws Exception {
         Path path = testDataDirectory.resolve("8columns.gff");
-        try (var stream = GFF3Parser.parse(path)) {
+        try (var stream = new GFF3Parser().parse(path)) {
             Exception exception = assertThrows(TextParserException.class, () -> stream.toArray(GFF3Record[]::new));
             assertEquals("Line 1: Must have at least 9 columns", exception.getMessage());
         }
@@ -50,7 +50,7 @@ public class GFF3ParserTest {
     @Test
     public void test10Columns() throws Exception {
         Path path = testDataDirectory.resolve("10columns.gff");
-        try (var stream = GFF3Parser.parse(path)) {
+        try (var stream = new GFF3Parser().parse(path)) {
             GFF3Record[] records = stream.toArray(GFF3Record[]::new);
             assertEquals(1, records.length);
             testEqualsGene0(records[0]);

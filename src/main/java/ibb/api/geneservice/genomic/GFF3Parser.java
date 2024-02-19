@@ -18,7 +18,7 @@ import ibb.api.geneservice.parser.TextParserException;
 /**
  * GFF3 specification: http://gmod.org/wiki/GFF3
  */
-public final class GFF3Parser {
+public final class GFF3Parser implements TextParser<GFF3Record> {
 
     /** 
      * Parse a GFF3 file into a stream of {@link GFF3Record} objects.
@@ -28,9 +28,9 @@ public final class GFF3Parser {
      * @throws TextParserException if the file is not a valid GFF3 file
      * @apiNote This method must be used within a try-with-resources statement or similar control structure to ensure that the stream's open file is closed promptly after the stream's operations have completed.
      */
-    public static Stream<GFF3Record> parse(Path path) throws IOException {
+    public Stream<GFF3Record> parse(Path path) throws IOException {
         var parser = new GFF3Parser();
-        return TextParser.parse(path)
+        return parseText(path)
             .map(line -> {
                 parser.lineNumber.incrementAndGet();
                 return line;

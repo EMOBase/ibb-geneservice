@@ -7,11 +7,11 @@ import java.util.stream.Stream;
 
 import ibb.api.geneservice.parser.TextParser;
 
-public class FlyBaseGeneRNAProteinMapParser implements SynonymParser {
+public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
 
     @Override
     public Stream<Synonym> parse(Path path) throws IOException {
-        return TextParser.parse(path)
+        return parseText(path)
             .filter(line -> !isHeaderLine(line))
             .filter(line -> !line.isBlank())
             .map(this::parseLine)

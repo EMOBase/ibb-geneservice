@@ -23,7 +23,7 @@ public class SequenceIndex {
 
     public void loadFromFasta(String species, SequenceType type, Path path) throws IOException {
         try (
-            Stream<FastaRecord> sequences = FastaParser.parse(path);
+            Stream<FastaRecord> sequences = new FastaParser().parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
 

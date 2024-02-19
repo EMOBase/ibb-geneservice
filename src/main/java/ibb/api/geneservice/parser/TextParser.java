@@ -13,8 +13,10 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 
-public class TextParser {
-    public static Stream<String> parse(Path path) throws IOException {
+public interface TextParser<T> {
+    Stream<T> parse(Path path) throws IOException;
+
+    default Stream<String> parseText(Path path) throws IOException {
         var inputStream = getInputStream(path.toString());
         var br = new BufferedReader(new InputStreamReader(inputStream));
         return br.lines().onClose(() -> {

@@ -9,6 +9,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
+import ibb.api.geneservice.parser.TextParser;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -22,7 +23,7 @@ public class SynonymIndex {
     @ConfigProperty(name = "geneservice.elasticsearch.index-prefix")
     String indexPrefix;
 
-    public void loadSynonyms(String species, Path path, SynonymParser parser) throws IOException {
+    public void loadSynonyms(String species, Path path, TextParser<Synonym> parser) throws IOException {
         try (
             Stream<Synonym> synonyms = parser.parse(path);
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))

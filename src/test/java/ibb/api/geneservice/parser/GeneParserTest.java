@@ -17,7 +17,7 @@ public class GeneParserTest {
     @Test
     public void testIBBOGS3Head100() throws Exception {
         Path path = testDataDirectory.resolve("iBB_OGS3_head100.gff");
-        try (var stream = GenomicParser.parse(path)) {
+        try (var stream = new GenomicParser().parse(path)) {
             Genomic[] genes = stream.toArray(Genomic[]::new);
             assertEquals(17, genes.length);
             Genomic gene = genes[0];

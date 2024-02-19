@@ -18,7 +18,7 @@ public class FastaParserTest {
     @ValueSource(strings = { "iBB_OGS3_mRNA_3samples.fasta", "iBB_OGS3_mRNA_3samples_compressed.fasta.gz" })
     public void testIBBOGS3MRNA3Samples(String fileName) throws Exception {
         Path path = testDataDirectory.resolve(fileName);
-        try (var stream = FastaParser.parse(path)) {
+        try (var stream = new FastaParser().parse(path)) {
             FastaRecord[] records = stream.toArray(FastaRecord[]::new);
             assertEquals(3, records.length);
             testEqualsTC016174RA(records[0]);
