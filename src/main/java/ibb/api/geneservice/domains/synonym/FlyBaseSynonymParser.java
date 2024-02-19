@@ -44,11 +44,11 @@ public class FlyBaseSynonymParser implements TextParser<Synonym> {
             synonyms.add(new Synonym(geneId, "name", cols[3]));
         }
         if (cols.length > 4) {
-            Arrays.stream(cols[4].split("|"))
+            Arrays.stream(cols[4].split("\\|"))
                 .forEach(val -> synonyms.add(new Synonym(geneId, "other_symbols", val)));
         }
         if (cols.length > 5) {
-            Arrays.stream(cols[5].split("|"))
+            Arrays.stream(cols[5].split("\\|"))
                 .forEach(val -> synonyms.add(new Synonym(geneId, "other_names", val)));
         }
 

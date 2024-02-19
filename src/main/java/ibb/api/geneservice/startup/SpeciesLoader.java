@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import ibb.api.geneservice.domains.genomic.GenomicIndex;
-import ibb.api.geneservice.domains.sequence.SequenceIndex;
+import ibb.api.geneservice.domains.genomic.GenomicParser;
+import ibb.api.geneservice.domains.sequence.FastaParser;
 import ibb.api.geneservice.domains.sequence.SequenceType;
 import ibb.api.geneservice.domains.synonym.FlyBaseGeneRNAProteinMapParser;
 import ibb.api.geneservice.domains.synonym.FlyBaseSynonymParser;
-import ibb.api.geneservice.domains.synonym.SynonymIndex;
+import ibb.api.geneservice.es.ESIndexManager;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -22,13 +22,7 @@ import jakarta.inject.Inject;
 public class SpeciesLoader {
     
     @Inject
-    GenomicIndex geneIndex;
-
-    @Inject
-    SequenceIndex sequenceIndex;
-
-    @Inject
-    SynonymIndex synonymIndex;
+    ESIndexManager esIndexManager;
 
     public void load(String species, File dir) {
         File[] files = dir.listFiles(File::isFile);
@@ -62,10 +56,10 @@ public class SpeciesLoader {
 
     private void loadGFFs(String species, List<File> files) {
         try {
-            if (!geneIndex.exists(species)) {
-                geneIndex.createIndex(species);
+            String name = "genomic-" + species;
+            if (!esIndexManager.exists(name)) {
                 for (var file : files) {
-                    geneIndex.loadFromGFF(species, file.toPath());
+                    esIndexManager.load(name, file.toPath(), new GenomicParser());
                 };
             } else {
                 Log.infov("Gene index for species {0} already exists", species);
@@ -77,10 +71,10 @@ public class SpeciesLoader {
 
     private void loadSequences(String species, SequenceType type, List<File> files) {
         try {
-            if (!sequenceIndex.exists(species, type)) {
-                sequenceIndex.createIndex(species, type);
+            String name = "sequence-" + species + "-" + type;
+            if (!esIndexManager.exists(name)) {
                 for (var file : files) {
-                    sequenceIndex.loadFromFasta(species, type, file.toPath());
+                    esIndexManager.load(name, file.toPath(), new FastaParser());
                 };
             } else {
                 Log.infov("{0} index for species {1} already exists", type, species);
@@ -92,14 +86,13 @@ public class SpeciesLoader {
 
     private void loadFlyBaseSynonyms(String species, List<File> files) {
         try {
-            if (!synonymIndex.exists(species)) {
-                synonymIndex.createIndex(species);
-            
+            String name = "synonyms-" + species;
+            if (!esIndexManager.exists(name)) {
                 for (var file : files) {
                     if (FileTypes.isFlyBaseSynonymFile(file)) {
-                        synonymIndex.loadSynonyms(species, file.toPath(), new FlyBaseSynonymParser());
+                        esIndexManager.load(name, file.toPath(), new FlyBaseSynonymParser());
                     } else if (FileTypes.isFlyBaseGeneRNAProteinMapFile(file)) {
-                        synonymIndex.loadSynonyms(species, file.toPath(), new FlyBaseGeneRNAProteinMapParser());
+                        esIndexManager.load(name, file.toPath(), new FlyBaseGeneRNAProteinMapParser());
                     }
                 }
             } else {
