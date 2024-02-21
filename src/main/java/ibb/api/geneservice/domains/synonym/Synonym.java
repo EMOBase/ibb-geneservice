@@ -5,11 +5,11 @@ public class Synonym {
     public static enum Type {
         TRANSCRIPT,
         PROTEIN,
-        OLD_IDS,
+        OLD_ID,
         NAME,
         SYMBOL,
-        OTHER_NAMES,
-        OTHER_SYMBOLS,
+        OTHER_NAME,
+        OTHER_SYMBOL,
     }
 
     public String gene;

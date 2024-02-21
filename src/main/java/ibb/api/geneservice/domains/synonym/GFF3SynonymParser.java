@@ -116,7 +116,7 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
             );
             String geneXrefId = geneXrefIdGroup.current;
             geneXrefIdGroup.previous.stream()
-                .map((previous) -> new Synonym(geneXrefId, Synonym.Type.OLD_IDS, previous))
+                .map((previous) -> new Synonym(geneXrefId, Synonym.Type.OLD_ID, previous))
                 .forEach(synonyms::add);
 
             geneRecord.getAttributeFirstValueOptional("description")
