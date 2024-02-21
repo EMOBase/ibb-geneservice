@@ -12,7 +12,7 @@ import ibb.api.geneservice.domains.sequence.SequenceParser;
 import ibb.api.geneservice.domains.sequence.SequenceType;
 import ibb.api.geneservice.domains.synonym.FlyBaseGeneRNAProteinMapParser;
 import ibb.api.geneservice.domains.synonym.FlyBaseSynonymParser;
-import ibb.api.geneservice.domains.synonym.GFF3GeneRNAProteinMapParser;
+import ibb.api.geneservice.domains.synonym.GFF3SynonymParser;
 import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.index.DocumentSource;
 import ibb.api.geneservice.index.IndexManager;
@@ -89,11 +89,11 @@ public class SpeciesLoader {
                     }
                 }
                 if (FileTypes.isGFFFile(file)) {
-                    GFF3GeneRNAProteinMapParser parser;
+                    GFF3SynonymParser parser;
                     if (Objects.equals(species, "tribolium_castaneum")) {
-                        parser = new GFF3GeneRNAProteinMapParser(GFF3GeneIDFinder.byTCLocusTag());
+                        parser = new GFF3SynonymParser(GFF3GeneIDFinder.byTCLocusTag());
                     } else {
-                        parser = new GFF3GeneRNAProteinMapParser();
+                        parser = new GFF3SynonymParser();
                     }
                     return new DocumentSource<>(file, parser);
                 }

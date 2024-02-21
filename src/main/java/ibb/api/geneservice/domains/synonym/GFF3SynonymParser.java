@@ -23,15 +23,15 @@ import ibb.api.geneservice.parser.GFF3Record;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 
-public class GFF3GeneRNAProteinMapParser implements TextParser<Synonym> {
+public class GFF3SynonymParser implements TextParser<Synonym> {
 
     private GFF3GeneIDFinder gff3GeneIDFinder;
 
-    public GFF3GeneRNAProteinMapParser(GFF3GeneIDFinder geneIDFinder) {
+    public GFF3SynonymParser(GFF3GeneIDFinder geneIDFinder) {
         this.gff3GeneIDFinder = geneIDFinder;
     }
 
-    public GFF3GeneRNAProteinMapParser() {
+    public GFF3SynonymParser() {
         this.gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
     }
 
@@ -111,9 +111,14 @@ public class GFF3GeneRNAProteinMapParser implements TextParser<Synonym> {
                 throw new IllegalStateException("First record must be a gene record");
             }
 
-            String geneXrefId = gff3GeneIDFinder.findGeneId(geneRecord).orElseThrow(
+            var geneXrefIdGroup = gff3GeneIDFinder.findGeneId(geneRecord).orElseThrow(
                 () -> new TextParserException(gff3Parser.getLineNumber(), "Can't find gene xref id")
             );
+            String geneXrefId = geneXrefIdGroup.current;
+            geneXrefIdGroup.previous.stream()
+                .map((previous) -> new Synonym(geneXrefId, Synonym.Type.OLD_IDS, previous))
+                .forEach(synonyms::add);
+
             geneRecord.getAttributeFirstValueOptional("description")
                 .map(name -> new Synonym(geneXrefId, Synonym.Type.NAME, name))
                 .ifPresent(synonyms::add); 

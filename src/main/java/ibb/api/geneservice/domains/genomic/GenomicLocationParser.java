@@ -30,7 +30,7 @@ public class GenomicLocationParser implements TextParser<GenomicLocation> {
             .filter(gff3Record -> Objects.equals("gene", gff3Record.getType()))
             .map(record -> {
                 GenomicLocation loc = new GenomicLocation();
-                loc.id = gff3GeneIDFinder.findGeneId(record).orElseThrow(
+                loc.id = gff3GeneIDFinder.findGeneId(record).map(id -> id.current).orElseThrow(
                     () -> new TextParserException(gff3Parser.getLineNumber(), "Can't find gene xref id")
                 );
                 loc.referenceSeq = record.getSeqId();
