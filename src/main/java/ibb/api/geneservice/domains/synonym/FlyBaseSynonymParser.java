@@ -38,18 +38,18 @@ public class FlyBaseSynonymParser implements TextParser<Synonym> {
 
         List<Synonym> synonyms = new ArrayList<>();
         if (cols.length > 2) {
-            synonyms.add(new Synonym(geneId, "symbol", cols[2]));
+            synonyms.add(new Synonym(geneId, Synonym.Type.SYMBOL, cols[2]));
         }
         if (cols.length > 3) {
-            synonyms.add(new Synonym(geneId, "name", cols[3]));
+            synonyms.add(new Synonym(geneId, Synonym.Type.NAME, cols[3]));
         }
         if (cols.length > 4) {
             Arrays.stream(cols[4].split("\\|"))
-                .forEach(val -> synonyms.add(new Synonym(geneId, "other_symbols", val)));
+                .forEach(val -> synonyms.add(new Synonym(geneId, Synonym.Type.OTHER_SYMBOLS, val)));
         }
         if (cols.length > 5) {
             Arrays.stream(cols[5].split("\\|"))
-                .forEach(val -> synonyms.add(new Synonym(geneId, "other_names", val)));
+                .forEach(val -> synonyms.add(new Synonym(geneId, Synonym.Type.OTHER_NAMES, val)));
         }
 
         return synonyms;

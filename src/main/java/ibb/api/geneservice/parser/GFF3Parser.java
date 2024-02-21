@@ -1,4 +1,4 @@
-package ibb.api.geneservice.domains.genomic;
+package ibb.api.geneservice.parser;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -11,9 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-
-import ibb.api.geneservice.parser.TextParser;
-import ibb.api.geneservice.parser.TextParserException;
 
 /**
  * GFF3 specification: http://gmod.org/wiki/GFF3
@@ -29,15 +26,18 @@ public final class GFF3Parser implements TextParser<GFF3Record> {
      * @apiNote This method must be used within a try-with-resources statement or similar control structure to ensure that the stream's open file is closed promptly after the stream's operations have completed.
      */
     public Stream<GFF3Record> parse(Path path) throws IOException {
-        var parser = new GFF3Parser();
         return parseText(path)
             .map(line -> {
-                parser.lineNumber.incrementAndGet();
+                lineNumber.incrementAndGet();
                 return line;
             })
-            .filter(line -> !parser.isHeaderLine(line))
-            .filter(line -> !parser.isEmptyLine(line))
-            .map(parser::parseGFF3Line);
+            .filter(line -> !isHeaderLine(line))
+            .filter(line -> !isEmptyLine(line))
+            .map(this::parseGFF3Line);
+    }
+
+    public int getLineNumber() {
+        return lineNumber.get();
     }
 
     private AtomicInteger lineNumber = new AtomicInteger(0);

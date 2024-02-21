@@ -1,15 +1,12 @@
 package ibb.api.geneservice.startup;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 
 import ibb.api.geneservice.domains.ortholog.OrthologParser;
-import ibb.api.geneservice.es.ESIndexManager;
-import io.quarkus.logging.Log;
+import ibb.api.geneservice.index.DocumentSource;
+import ibb.api.geneservice.index.IndexManager;
+import ibb.api.geneservice.index.IndexType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -17,27 +14,14 @@ import jakarta.inject.Inject;
 public class OrthologLoader {
 
     @Inject
-    ESIndexManager esIndexManager;
+    IndexManager indexManager;
 
-    public void load(String source, File dir) {
+    public void load(String orthoSource, File dir) {
         File[] files = dir.listFiles(File::isFile);
-        Optional.of(Arrays.stream(files).toList())
-            .filter(orthologs -> !orthologs.isEmpty())
-            .ifPresent(orthologs -> loadOrthologs(source, orthologs));
-    }
+        var docSources = Arrays.stream(files)
+            .map(file -> new DocumentSource<>(file, new OrthologParser(orthoSource)))
+            .toList();
 
-    private void loadOrthologs(String source, List<File> files) {
-        try {
-            String name = "orthologs-" + source;
-            if (!esIndexManager.exists(name)) {
-                for (var file : files) {
-                    esIndexManager.load(name, file.toPath(), new OrthologParser());
-                };
-            } else {
-                Log.infov("Orthologs for {0} already exists", source);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        indexManager.loadAllIfNotExists(indexManager.getPrefix(IndexType.ORTHOLOG), docSources);
     }
 }

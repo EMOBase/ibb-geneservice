@@ -1,4 +1,4 @@
-package ibb.api.geneservice.domains.genomic;
+package ibb.api.geneservice.parser;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -144,10 +144,14 @@ public final class GFF3Record {
     }
 
     public String getAttributeFirstValue(String tag) {
+        return getAttributeFirstValueOptional(tag)
+            .orElse(null);
+    }
+
+    public Optional<String> getAttributeFirstValueOptional(String tag) {
         return Optional.ofNullable(attributes.get(tag))
             .filter(ids -> ids.size() > 0)
-            .map(ids -> ids.get(0))
-            .orElse(null);
+            .map(ids -> ids.get(0));
     }
 
     public String getId() {

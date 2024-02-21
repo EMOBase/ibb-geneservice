@@ -1,7 +1,7 @@
-package ibb.api.geneservice.es;
+package ibb.api.geneservice.index;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.io.UncheckedIOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -13,14 +13,13 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class ESIndexManager {
+public class IndexManager {
     
     @Inject
     ElasticsearchClient esClient;
@@ -28,33 +27,49 @@ public class ESIndexManager {
     @ConfigProperty(name = "geneservice.elasticsearch.index-prefix")
     String indexPrefix;
 
+
     /**
-     * Load items from a file into an index. This method will create an index with the name as follows:
-     * <pre>
-     *    indexPrefix-name-timestamp
-     * </pre>
-     * which can be queried through the alias:
-     * <pre>
-     *   indexPrefix-name
-     * </pre>
-     * Previous indices with the same alias will be deleted.
+     * Load documents from multiple sources into an index only if the index does not exist.
      * 
-     * @param <T> the type of the items
-     * @param name a unique name to construct the index name and alias
-     * @param path the path to the file
-     * @param parser a parser to parse the file into a stream of items
+     * @param <T> the type of the documents
+     * @param prefix a unique prefix to construct the index name and alias
+     * @param sources a list of document sources
+     */
+    public <T> void loadAllIfNotExists(String prefix, List<DocumentSource<T>> sources) {
+        try {
+            if (!exists(prefix)) {
+                for (var source : sources) {
+                    load(prefix, source);
+                };
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Load documents from a source into an index. This method will create an index
+     * with the name {@code prefix-timestamp}, which can be queried through the alias
+     * {@code prefix}.
+     * 
+     * Previous indices with the same alias will be deleted.
+     * The use of the alias makes sure documents are inserted in a transaction manner.
+     * 
+     * @param <T> the type of the documents
+     * @param prefix a unique prefix to construct the index name and alias
+     * @param source a document source
      * @throws IOException if an I/O error occurs
      */
-    public <T> void load(String name, Path path, TextParser<T> parser) throws IOException {
-        String aliasName = getAliasName(name);
+    public <T> void load(String prefix, DocumentSource<T> source) throws IOException {
+        String aliasName = getAliasName(prefix);
         String indexName = aliasName + "-" + getTimestamp();
         AtomicInteger counter = new AtomicInteger(0);
 
         try (
-            Stream<T> items = parser.parse(path);
+            Stream<T> items = source.parser.parse(source.file.toPath());
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
-            Log.infov("Loading {0} items from {1}", name, path.toString());
+            Log.infov("Loading {0} items from {1}", aliasName, source.file.toPath().toString());
             items.forEach(item -> {
                 counter.incrementAndGet();
                 ingester.add(op -> op
@@ -81,21 +96,30 @@ public class ESIndexManager {
         if (!existingIndices.isEmpty()) {
             esClient.indices().delete(d -> d.index(existingIndices));
         }
-        Log.infov("Loaded {0} {1} items", counter.get(), name);
+        Log.infov("Loaded {0} {1} items", counter.get(), aliasName);
     }
 
-    public boolean exists(String name) throws IOException {
-        return esClient.indices().existsAlias(a -> a.name(getAliasName(name))).value();
+    public boolean exists(String prefix) throws IOException {
+        return esClient.indices().existsAlias(a -> a.name(getAliasName(prefix))).value();
     }
 
     /**
      * Get the name of the alias which can be used to query the index.
      * 
-     * @param name the name used to construct the alias
+     * @param prefix the prefix used to construct the alias
      * @return the alias name
      */
-    public String getAliasName(String name) {
-        return indexPrefix + "-" + name.toLowerCase();
+    public String getAliasName(String prefix) {
+        return prefix.toLowerCase().replace(" ", "_");
+    }
+
+    public String getPrefix(IndexType type, String... suffices) {
+        String prefix = indexPrefix + "-" + type.name();
+        if (suffices.length == 0) {
+            return prefix;
+        } else {
+            return prefix + "-" + String.join("-", suffices);
+        }
     }
 
     private List<String> getIndicesWithAlias(String aliasName) throws IOException {

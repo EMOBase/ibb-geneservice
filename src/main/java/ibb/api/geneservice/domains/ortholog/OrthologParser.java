@@ -10,6 +10,12 @@ import ibb.api.geneservice.parser.TextParser;
 
 public class OrthologParser implements TextParser<Ortholog> {
 
+    private String source;
+
+    public OrthologParser(String source) {
+        this.source = source;
+    }
+
     @Override
     public Stream<Ortholog> parse(Path path) throws IOException {
         return parseText(path)
@@ -32,10 +38,10 @@ public class OrthologParser implements TextParser<Ortholog> {
             .map(col -> col.trim().split(","))
             .flatMap(Arrays::stream)
             .map(String::trim)
-            .map(gene -> {
+            .map(value -> {
                 Ortholog ortholog = new Ortholog();
-                ortholog.group = group;
-                ortholog.gene = gene;
+                ortholog.group = source + "-" + group;
+                ortholog.ortholog = value;
                 return ortholog;
             })
             .toList();
