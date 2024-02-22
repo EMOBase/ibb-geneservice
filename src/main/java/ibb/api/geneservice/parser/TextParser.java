@@ -14,6 +14,10 @@ import java.util.zip.GZIPInputStream;
 
 
 public interface TextParser<T> {
+
+    /**
+     * @implNote The returned stream must have a close handler that closes the underlying file.
+     */
     Stream<T> parse(Path path) throws IOException;
 
     default Stream<String> parseText(Path path) throws IOException {

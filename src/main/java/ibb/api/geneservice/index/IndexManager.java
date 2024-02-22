@@ -34,6 +34,7 @@ public class IndexManager {
      * @param <T> the type of the documents
      * @param prefix a unique prefix to construct the index name and alias
      * @param sources a list of document sources
+     * @throws UncheckedIOException if an I/O error occurs
      */
     public <T> void loadAllIfNotExists(String prefix, List<DocumentSource<T>> sources) {
         try {
@@ -66,7 +67,7 @@ public class IndexManager {
         AtomicInteger counter = new AtomicInteger(0);
 
         try (
-            Stream<T> items = source.parser.parse(source.file.toPath());
+            Stream<T> items = source.stream();
             BulkIngester<Void> ingester = BulkIngester.of(b -> b.client(esClient))
         ) {
             Log.infov("Loading {0} items from {1}", aliasName, source.file.toPath().toString());
