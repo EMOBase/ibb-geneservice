@@ -41,9 +41,16 @@ public class OrthologParser implements TextParser<Ortholog> {
             .map(value -> {
                 Ortholog ortholog = new Ortholog();
                 ortholog.group = source + "-" + group;
-                ortholog.ortholog = value;
+                ortholog.ortholog = normalizeValue(value);
                 return ortholog;
             })
             .toList();
+    }
+
+    private String normalizeValue(String value) {
+        if (value.startsWith("gnl|WGS_")) {
+            return value.replace("gnl|WGS_", "gnl|WGS:");
+        }
+        return value;
     }
 }

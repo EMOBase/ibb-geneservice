@@ -31,16 +31,19 @@ public class SpeciesLoader {
         File[] files = dir.listFiles(File::isFile);
 
         indexManager.loadAllIfNotExists(
-            indexManager.getPrefix(IndexType.GENOMIC_LOCATION, species),
-            getGenomicLocationSources(species, files));
+            getGenomicLocationSources(species, files),
+            IndexType.GENOMIC_LOCATION,
+            species);
 
         indexManager.loadAllIfNotExists(
-            indexManager.getPrefix(IndexType.SEQUENCE, species),
-            getSequenceSources(species, files));
+            getSequenceSources(species, files),
+            IndexType.SEQUENCE,
+            species);
         
         indexManager.loadAllIfNotExists(
-            indexManager.getPrefix(IndexType.SYNONYM, species),
-            getSynonymSources(species, files));
+            getSynonymSources(species, files),
+            IndexType.SYNONYM,
+            species);
     }
 
     private List<DocumentSource<GenomicLocation>> getGenomicLocationSources(String species, File[] files) {
