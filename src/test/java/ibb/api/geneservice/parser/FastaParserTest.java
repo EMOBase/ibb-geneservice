@@ -8,6 +8,9 @@ import java.nio.file.Path;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import ibb.api.geneservice.parser.fasta.FastaParser;
+import ibb.api.geneservice.parser.fasta.FastaRecord;
+
 public class FastaParserTest {
     private Path testDataDirectory = Path.of("src", "test", "resources", "fasta");
 

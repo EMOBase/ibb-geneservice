@@ -1,4 +1,4 @@
-package ibb.api.geneservice.parser;
+package ibb.api.geneservice.parser.fasta;
 
 public class FastaRecord {
     public String header;

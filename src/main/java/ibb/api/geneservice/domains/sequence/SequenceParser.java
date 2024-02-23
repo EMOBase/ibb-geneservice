@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import ibb.api.geneservice.parser.FastaParser;
 import ibb.api.geneservice.parser.TextParser;
+import ibb.api.geneservice.parser.fasta.FastaParser;
 
 public class SequenceParser implements TextParser<Sequence> {
 

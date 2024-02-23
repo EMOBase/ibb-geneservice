@@ -1,4 +1,4 @@
-package ibb.api.geneservice.parser;
+package ibb.api.geneservice.parser.fasta;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -9,6 +9,9 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import ibb.api.geneservice.parser.TextParser;
+import ibb.api.geneservice.parser.TextParserException;
 
 public final class FastaParser implements TextParser<FastaRecord> {
 

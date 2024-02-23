@@ -17,11 +17,11 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import ibb.api.geneservice.domains.genomic.GenomicLocation;
-import ibb.api.geneservice.parser.GFF3GeneIDFinder;
-import ibb.api.geneservice.parser.GFF3Parser;
-import ibb.api.geneservice.parser.GFF3Record;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
+import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
+import ibb.api.geneservice.parser.gff3.GFF3Parser;
+import ibb.api.geneservice.parser.gff3.GFF3Record;
 
 public class GFF3SynonymParser implements TextParser<Synonym> {
 
@@ -29,10 +29,6 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
 
     public GFF3SynonymParser(GFF3GeneIDFinder geneIDFinder) {
         this.gff3GeneIDFinder = geneIDFinder;
-    }
-
-    public GFF3SynonymParser() {
-        this.gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
     }
 
     /**

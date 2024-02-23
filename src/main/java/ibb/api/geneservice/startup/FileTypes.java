@@ -12,7 +12,7 @@ public class FileTypes {
     private static final List<String> GFF_EXTENSIONS = List.of(".gff", ".gff3");
     private static final List<String> GZIP_EXTENSIONS = List.of(".gz");
     private static final List<String> CDS_SUFFICES = List.of("_cds");
-    private static final List<String> RNA_SUFFICES = List.of("_rna", "_mrna", "_rnas", "_mrnas");
+    private static final List<String> TRANSCRIPT_SUFFICES = List.of("_rna", "_mrna", "_rnas", "_mrnas");
     private static final List<String> PROTEIN_SUFFICES = List.of("_protein", "_proteins");
 
 
@@ -31,13 +31,13 @@ public class FileTypes {
             .orElse(false);
     }
 
-    public static boolean isRNAFile(File file) {
+    public static boolean isTranscriptFile(File file) {
         String name = ignoreGzip(file.getName().toLowerCase());
         return FASTA_EXTENSIONS.stream()
             .filter(ext -> name.endsWith(ext))
             .findFirst()
             .map(ext -> name.replaceAll(ext + "$", ""))
-            .map(nameWithoutExt -> RNA_SUFFICES.stream().anyMatch(nameWithoutExt::endsWith))
+            .map(nameWithoutExt -> TRANSCRIPT_SUFFICES.stream().anyMatch(nameWithoutExt::endsWith))
             .orElse(false);
     }
 

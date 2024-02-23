@@ -1,4 +1,4 @@
-package ibb.api.geneservice.parser;
+package ibb.api.geneservice.parser.gff3;
 
 import java.util.Arrays;
 import java.util.List;

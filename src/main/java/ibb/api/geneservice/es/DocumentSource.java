@@ -1,8 +1,9 @@
-package ibb.api.geneservice.index;
+package ibb.api.geneservice.es;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 
 import ibb.api.geneservice.parser.TextParser;
@@ -10,18 +11,22 @@ import ibb.api.geneservice.parser.TextParser;
 public class DocumentSource<T> {
     public File file;
     public TextParser<T> parser;
-    public Optional<String> ingestPipeline;
+    public String ingestPipeline;
+    public List<String> tags = Collections.emptyList();
 
     public DocumentSource(File file, TextParser<T> parser) {
         this.file = file;
         this.parser = parser;
-        this.ingestPipeline = Optional.empty();
     }
 
-    public DocumentSource(File file, TextParser<T> parser, Optional<String> ingestPipeline) {
-        this.file = file;
-        this.parser = parser;
+    public DocumentSource<T> withIngestPipeline(String ingestPipeline) {
         this.ingestPipeline = ingestPipeline;
+        return this;
+    }
+
+    public DocumentSource<T> withTags(List<String> tags) {
+        this.tags = tags;
+        return this;
     }
 
     /**

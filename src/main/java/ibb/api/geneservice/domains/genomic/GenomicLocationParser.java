@@ -5,19 +5,14 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import ibb.api.geneservice.parser.GFF3GeneIDFinder;
-import ibb.api.geneservice.parser.GFF3Parser;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
+import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
+import ibb.api.geneservice.parser.gff3.GFF3Parser;
 
 public class GenomicLocationParser implements TextParser<GenomicLocation> {
 
-
     private GFF3GeneIDFinder gff3GeneIDFinder;
-
-    public GenomicLocationParser() {
-        this.gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
-    }
 
     public GenomicLocationParser(GFF3GeneIDFinder geneIDFinder) {
         this.gff3GeneIDFinder = geneIDFinder;
