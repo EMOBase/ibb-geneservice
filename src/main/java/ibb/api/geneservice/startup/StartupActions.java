@@ -116,15 +116,13 @@ public class StartupActions {
         if (reloadOrthologs) {
             orthologIndex.delete();
             String orthologPipeline = orthologIndex.createPipeline();
-            listSubDirs("orthologs")
-                .map(orthologDir -> {
-                    File[] files = orthologDir.listFiles(File::isFile);
-                    String orthoSource = orthologDir.getName();
-                    return Arrays.stream(files)
-                        .map(file -> new DocumentSource<>(file, new OrthologParser(orthoSource))
-                            .withIngestPipeline(orthologPipeline));
+            File[] files = Path.of(dataDir, "orthology").toFile().listFiles(File::isFile);
+            Arrays.stream(files)
+                .map(file -> {
+                    String orthoSource = file.getName().split("_")[0];
+                    return new DocumentSource<>(file, new OrthologParser(orthoSource))
+                        .withIngestPipeline(orthologPipeline);
                 })
-                .flatMap(s -> s)
                 .forEach(orthologIndex::load);
             if (orthologIndex.exists()) {
                 orthologIndex.refresh();
@@ -145,7 +143,7 @@ public class StartupActions {
             .filter(FileTypes::isGFFFile)
             .map(file -> {
                 GenomicLocationParser parser;
-                if (Objects.equals(species, "tribolium_castaneum")) {
+                if (Objects.equals(species, "Tcas")) {
                     parser = new GenomicLocationParser(GFF3GeneIDFinder.byTCLocusTag());
                 } else {
                     parser = new GenomicLocationParser(GFF3GeneIDFinder.byNCBIGeneID());
@@ -180,7 +178,7 @@ public class StartupActions {
         return Arrays.stream(dir.listFiles(File::isFile))
             .map(file -> {
                 TextParser<Synonym> parser = null;
-                if (Objects.equals("drosophila_melanogaster", species)) {
+                if (Objects.equals("Dmel", species)) {
                     if (FileTypes.isFlyBaseSynonymFile(file)) {
                         parser = new FlyBaseSynonymParser();
                     } else if (FileTypes.isFlyBaseGeneRNAProteinMapFile(file)) {
@@ -188,7 +186,7 @@ public class StartupActions {
                     }
                 }
                 if (FileTypes.isGFFFile(file)) {
-                    if (Objects.equals(species, "tribolium_castaneum")) {
+                    if (Objects.equals(species, "Tcas")) {
                         parser = new GFF3SynonymParser(GFF3GeneIDFinder.byTCLocusTag());
                     } else {
                         parser = new GFF3SynonymParser(GFF3GeneIDFinder.byNCBIGeneID());
