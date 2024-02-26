@@ -20,7 +20,6 @@ public abstract class ESSourceIndex<T> {
     @Inject
     ESHelper esHelper;
 
-    @Inject
     ElasticsearchClient esClient;
 
     /**
@@ -36,10 +35,8 @@ public abstract class ESSourceIndex<T> {
     @PostConstruct
     public void setup() {
         alias = esHelper.getESName(key);
+        esClient = esHelper.getESClient();
 
-        if (shouldDeleteOnStart()) {
-            delete();
-        }
         try {
 			esClient.indices().putIndexTemplate(it -> it
                 .name(alias + "-template")
@@ -136,6 +133,5 @@ public abstract class ESSourceIndex<T> {
         return esHelper;
     }
 
-    protected abstract boolean shouldDeleteOnStart();
     protected abstract TypeMapping getTypeMapping();
 }

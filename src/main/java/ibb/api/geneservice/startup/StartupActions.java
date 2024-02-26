@@ -12,6 +12,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import ibb.api.geneservice.domains.genomic.GenomicLocation;
 import ibb.api.geneservice.domains.genomic.GenomicLocationIndex;
 import ibb.api.geneservice.domains.genomic.GenomicLocationParser;
+import ibb.api.geneservice.domains.ortholog.OrthogroupIndex;
 import ibb.api.geneservice.domains.ortholog.OrthologIndex;
 import ibb.api.geneservice.domains.ortholog.OrthologParser;
 import ibb.api.geneservice.domains.sequence.Sequence;
@@ -38,6 +39,18 @@ public class StartupActions {
     @ConfigProperty(name = "geneservice.data-dir")
     String dataDir;
 
+    @ConfigProperty(name = "geneservice.elasticsearch.reload-genomiclocations", defaultValue = "false")
+    boolean reloadGenomicLocations;
+
+    @ConfigProperty(name = "geneservice.elasticsearch.reload-sequences", defaultValue = "false")
+    boolean reloadSequences;
+
+    @ConfigProperty(name = "geneservice.elasticsearch.reload-synonyms", defaultValue = "false")
+    boolean reloadSynonyms;
+
+    @ConfigProperty(name = "geneservice.elasticsearch.reload-orthologs", defaultValue = "false")
+    boolean reloadOrthologs;
+
     @Inject
     GenomicLocationIndex genomicLocationIndex;
 
@@ -50,18 +63,24 @@ public class StartupActions {
     @Inject
     OrthologIndex orthologIndex;
 
-    public void init(@Observes StartupEvent event) {
+    @Inject
+    OrthogroupIndex orthogroupIndex;
 
-        if (!genomicLocationIndex.exists()) {
+    public void init(@Observes StartupEvent event) {
+        reloadGenomicLocations = reloadGenomicLocations || !genomicLocationIndex.exists();
+        if (reloadGenomicLocations) {
+            genomicLocationIndex.delete();
             listSubDirs("species")
                 .map(this::getGenomicLocationSources)
                 .flatMap(s -> s)
                 .forEach(genomicLocationIndex::load);
         } else {
-            Log.info("Genomic location index already exists");
+            Log.info("Genomic location index already exists.");
         }
 
-        if (!sequenceIndex.exists()) {
+        reloadSequences = reloadSequences || !sequenceIndex.exists();
+        if (reloadSequences) {
+            sequenceIndex.delete();
             listSubDirs("species")
                 .map(this::getSequenceSources)
                 .flatMap(s -> s)
@@ -70,8 +89,14 @@ public class StartupActions {
             Log.info("Sequence index already exists");
         }
 
-        boolean shouldReloadOrthologs = false;
-        if (!synonymIndex.exists()) {
+        reloadOrthologs = reloadOrthologs || !orthologIndex.exists();
+        reloadSynonyms = reloadSynonyms || !synonymIndex.exists();
+
+        if (reloadSynonyms) {
+            orthologIndex.delete();
+            orthogroupIndex.delete();
+            synonymIndex.delete();
+
             listSubDirs("species")
                 .map(this::getSynonymSources)
                 .flatMap(s -> s)
@@ -79,17 +104,18 @@ public class StartupActions {
 
             synonymIndex.refresh();
             if (synonymIndex.exists()) {
-                Log.info("Computing enriched index from synonym index");
-                orthologIndex.computeEnrichedIndex();
-                shouldReloadOrthologs = true;
+                Log.info("Computing enriched indices from synonym index");
+                synonymIndex.computeSynonym2GeneEnrichedIndex();
+                synonymIndex.computeGene2SynonymsEnrichedIndex();
+                reloadOrthologs = true;
             }
         } else {
             Log.info("Synonym index already exists");
         }
 
-        String orthologPipeline = orthologIndex.createPipeline();
-        if (!orthologIndex.exists() || shouldReloadOrthologs) {
+        if (reloadOrthologs) {
             orthologIndex.delete();
+            String orthologPipeline = orthologIndex.createPipeline();
             listSubDirs("orthologs")
                 .map(orthologDir -> {
                     File[] files = orthologDir.listFiles(File::isFile);
@@ -100,6 +126,12 @@ public class StartupActions {
                 })
                 .flatMap(s -> s)
                 .forEach(orthologIndex::load);
+            if (orthologIndex.exists()) {
+                orthologIndex.refresh();
+                Log.info("Grouping orthologs by group");
+                orthogroupIndex.delete();
+                orthogroupIndex.transform();
+            }
         } else {
             Log.info("Ortholog index already exists");
         }
@@ -170,102 +202,7 @@ public class StartupActions {
             .filter(Objects::nonNull);
     }
 
-    // void init(@Observes StartupEvent event) throws IOException {
-    //     if (forceReloadSpecies) {
-    //         sourceIndexManager.delete(SourceIndexType.GENOMIC_LOCATION);
-    //         sourceIndexManager.delete(SourceIndexType.SEQUENCE);
-    //         sourceIndexManager.delete(SourceIndexType.SYNONYM);
-    //         pipelineManager.delete(PipelineType.ADD_GENE_TO_ORTHOLOG);
-    //     }
-    //     subDirs("species").forEach(speciesDir -> speciesLoader.load(speciesDir.getName(), speciesDir));
-
-
-    //     if (forceReloadOrthologs) {
-    //         sourceIndexManager.delete(SourceIndexType.ORTHOLOG);
-    //     }
-    //     subDirs("orthologs").forEach(orthologDir -> {
-    //         File[] files = orthologDir.listFiles(File::isFile);
-    //         String orthoSource = orthologDir.getName();
-    //         var docSources = Arrays.stream(files)
-    //             .map(file -> new DocumentSource<>(file, new OrthologParser(orthoSource), pipeline))
-    //             .toList();
-    //         sourceIndexManager.loadAllIfNotExists(docSources, SourceIndexType.ORTHOLOG);
-    //     });
-    // }
-
     private Stream<File> listSubDirs(String dir) {
         return Arrays.stream(Path.of(dataDir, dir).toFile().listFiles(File::isDirectory));
     }
-
-    // private Optional<String> createOrthologIngestPipeline() throws IOException {
-    //     if (!sourceIndexManager.exists(SourceIndexType.SYNONYM)) {
-    //         return Optional.empty();
-    //     }
-
-    //     String policyName = esHelper.getESName("synonym2gene");
-    //     String pipelineName = esHelper.getESName("add_gene_to_ortholog");
-
-    //     if (forceRecreateEnrichedIndex) {
-    //         try {
-    //             esClient.ingest().deletePipeline(p -> p.id(pipelineName));
-    //         } catch (ElasticsearchException e) {
-    //             if (e.status() != 404) {
-    //                 throw e;
-    //             }
-    //         }
-    //         try {
-    //             esClient.enrich().deletePolicy(p -> p.name(policyName));
-    //         } catch (ElasticsearchException e) {
-    //             if (e.status() != 404) {
-    //                 throw e;
-    //             }
-    //         }
-    //     }
-
-    //     boolean policyExists = esClient.enrich().getPolicy(p -> p.name(policyName)).policies().size() > 0;
-    //     if (!policyExists) {
-    //         esClient.enrich().putPolicy(p -> p
-    //             .name(policyName)
-    //             .match(m -> m
-    //                 .indices(sourceIndexManager.getIndexName(SourceIndexType.SYNONYM))
-    //                 .matchField("value")
-    //                 .enrichFields("gene")
-    //             ));
-    //         esClient.indices().refresh(r -> r
-    //             .index(sourceIndexManager.getIndexName(SourceIndexType.SYNONYM))
-    //         );
-    //         esClient.enrich().executePolicy(p -> p
-    //             .name(policyName)
-    //             .waitForCompletion(true)
-    //         );
-    //     }
-
-    //     esClient.ingest().putPipeline(p -> p
-    //         .id(pipelineName)
-    //         .description("Enriches ortholog documents with current gene name")
-    //         .processors(pr -> pr
-    //             .enrich(e -> e
-    //                 .policyName(policyName)
-    //                 .field("ortholog")
-    //                 .targetField("gene_enriched")
-    //             ))
-    //         .processors(pr -> pr
-    //             .set(s -> s
-    //                 .field("gene")
-    //                 .value(JsonData.of("{{{gene_enriched.gene}}}"))
-    //             ))
-    //         .processors(pr -> pr
-    //             .set(s -> s
-    //                 .field("gene")
-    //                 .value(JsonData.of("{{{ortholog}}}"))
-    //                 .if_("ctx.gene == ''")
-    //         ))
-    //         .processors(pr -> pr
-    //             .remove(r -> r
-    //                 .field("gene_enriched")
-    //                 .ignoreFailure(true)
-    //             ))
-    //     );
-    //     return Optional.of(pipelineName);
-    // }
 }
