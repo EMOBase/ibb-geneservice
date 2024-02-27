@@ -26,9 +26,15 @@ import ibb.api.geneservice.parser.gff3.GFF3Record;
 public class GFF3SynonymParser implements TextParser<Synonym> {
 
     private GFF3GeneIDFinder gff3GeneIDFinder;
+    private String species;
 
-    public GFF3SynonymParser(GFF3GeneIDFinder geneIDFinder) {
-        this.gff3GeneIDFinder = geneIDFinder;
+    public GFF3SynonymParser(String species) {
+        this.species = species;
+        if (Objects.equals("Tcas", species)) {
+            gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
+        } else {
+            gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
+        }
     }
 
     /**
@@ -43,7 +49,7 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
         var gff3Parser = new GFF3Parser();
         var stream = gff3Parser.parse(path);
         var gff3RecordIterator = stream.iterator();
-        var synonymIterator = new SynonymIterator(gff3RecordIterator, gff3Parser, gff3GeneIDFinder);
+        var synonymIterator = new SynonymIterator(gff3RecordIterator, gff3Parser, this);
         return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(synonymIterator, Spliterator.ORDERED),
             false
@@ -53,14 +59,14 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
     private static class SynonymIterator implements Iterator<List<Synonym>> {
         private GFF3Parser gff3Parser;
         private Iterator<GFF3Record> gff3RecordIterator;
-        private GFF3GeneIDFinder gff3GeneIDFinder;
+        private GFF3SynonymParser synonymParser;
         private List<GFF3Record> gff3Records = new ArrayList<>();
         private List<Synonym> current = null;
 
-        public SynonymIterator(Iterator<GFF3Record> gff3RecordIterator, GFF3Parser gff3Parser, GFF3GeneIDFinder gff3GeneIDFinder) {
+        public SynonymIterator(Iterator<GFF3Record> gff3RecordIterator, GFF3Parser gff3Parser, GFF3SynonymParser synonymParser) {
             this.gff3Parser = gff3Parser;
             this.gff3RecordIterator = gff3RecordIterator;
-            this.gff3GeneIDFinder = gff3GeneIDFinder;
+            this.synonymParser = synonymParser;
         }
 
         private List<Synonym> getNextSynonyms() {
@@ -107,16 +113,16 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
                 throw new IllegalStateException("First record must be a gene record");
             }
 
-            var geneXrefIdGroup = gff3GeneIDFinder.findGeneId(geneRecord).orElseThrow(
+            var geneXrefIdGroup = synonymParser.gff3GeneIDFinder.findGeneId(geneRecord).orElseThrow(
                 () -> new TextParserException(gff3Parser.getLineNumber(), "Can't find gene xref id")
             );
             String geneXrefId = geneXrefIdGroup.current;
             geneXrefIdGroup.previous.stream()
-                .map((previous) -> new Synonym(geneXrefId, Synonym.Type.OLD_ID, previous))
+                .map((previous) -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.OLD_ID, previous))
                 .forEach(synonyms::add);
 
             geneRecord.getAttributeFirstValueOptional("description")
-                .map(name -> new Synonym(geneXrefId, Synonym.Type.NAME, name))
+                .map(name -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.NAME, name))
                 .ifPresent(synonyms::add); 
 
             String geneLocalId = geneRecord.getId();
@@ -151,11 +157,11 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
                 }
             });
             mRNAXrefIds.stream()
-                .map((mRNAXrefId) -> new Synonym(geneXrefId, Synonym.Type.TRANSCRIPT, mRNAXrefId))
+                .map((mRNAXrefId) -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.TRANSCRIPT, mRNAXrefId))
                 .forEach(synonyms::add);
 
             proteinXrefIds.stream()
-                .map((proteinXrefId) -> new Synonym(geneXrefId, Synonym.Type.PROTEIN, proteinXrefId))
+                .map((proteinXrefId) -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.PROTEIN, proteinXrefId))
                 .forEach(synonyms::add);
             return synonyms;
         }

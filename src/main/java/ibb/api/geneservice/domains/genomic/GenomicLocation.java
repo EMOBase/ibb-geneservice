@@ -1,9 +1,17 @@
 package ibb.api.geneservice.domains.genomic;
 
-public class GenomicLocation {
-    public String id;
+import ibb.api.geneservice.es.ESDoc;
+
+public class GenomicLocation implements ESDoc {
+    public String gene;
+    public String species;
     public String referenceSeq;
     public Integer start;
     public Integer end;
     public String strand;
+
+    @Override
+    public String _id() {
+        return species + ":" + gene;
+    }
 }

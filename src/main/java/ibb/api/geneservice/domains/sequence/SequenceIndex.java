@@ -14,7 +14,10 @@ public class SequenceIndex extends ESSourceIndex<Sequence> {
 	@Override
 	protected TypeMapping getTypeMapping() {
         return TypeMapping.of(m -> m
-            .properties("sequence", pr -> pr.text(tx -> tx.index(false)))
+            .properties("sequence", p -> p.text(tx -> tx.index(false)))
+            .properties("name", p -> p.keyword(k -> k))
+            .properties("species", p -> p.keyword(k -> k))
+            .properties("type", p -> p.keyword(k -> k))
         );
 	}
 }

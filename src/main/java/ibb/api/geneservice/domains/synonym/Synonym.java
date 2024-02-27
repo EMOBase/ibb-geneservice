@@ -1,6 +1,10 @@
 package ibb.api.geneservice.domains.synonym;
 
-public class Synonym {
+import java.util.List;
+
+import ibb.api.geneservice.es.ESDoc;
+
+public class Synonym implements ESDoc {
 
     public static enum Type {
         TRANSCRIPT,
@@ -13,12 +17,19 @@ public class Synonym {
     }
 
     public String gene;
+    public String species;
     public Type type;
     public String value;
 
-    public Synonym(String gene, Type type, String value) {
+    public Synonym(String species, String gene, Type type, String value) {
+        this.species = species;
         this.gene = gene;
         this.type = type;
         this.value = value;
+    }
+
+    @Override
+    public String _id() {
+        return String.join(":", List.of(species, type.name(), value));
     }
 }

@@ -11,7 +11,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class SynonymIndex extends ESSourceIndex<Synonym> {
 
-	private String synonym2GenePolicyName;
 	private String gene2SynonymsPolicyName;
 
     public SynonymIndex() {
@@ -20,9 +19,8 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 
 	@Override
 	@PostConstruct
-	public void setup() {
-		super.setup();
-		synonym2GenePolicyName = getESHelper().getESName("synonym2gene");
+	protected void init() {
+		super.init();
 		gene2SynonymsPolicyName = getESHelper().getESName("gene2synonym");
 	}
 
@@ -30,39 +28,20 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	public void delete() {
 		super.delete();
 		getESHelper().deleteEnrichPolicyIgnoreUnavailable(gene2SynonymsPolicyName);
-		getESHelper().deleteEnrichPolicyIgnoreUnavailable(synonym2GenePolicyName);
 	}
 
 	@Override
 	protected TypeMapping getTypeMapping() {
-        return null;
+        return TypeMapping.of(t -> t
+			.properties("species", p -> p.keyword(k -> k))
+			.properties("gene", p -> p.keyword(k -> k))
+			.properties("type", p -> p.keyword(k -> k))
+			.properties("value", p -> p.text(tx -> tx))
+		);
 	}
 
 	public String getGene2SynonymsPolicyName() {
 		return gene2SynonymsPolicyName;
-	}
-
-	public String getSynonym2GenePolicyName() {
-		return synonym2GenePolicyName;
-	}
-
-	public void computeSynonym2GeneEnrichedIndex() {
-		String policyName = getSynonym2GenePolicyName();
-		try {
-			getESClient().enrich().putPolicy(p -> p
-				.name(policyName)
-				.match(m -> m
-					.indices(getQueryIndexName())
-					.matchField("value")
-					.enrichFields("gene")
-				));
-			getESClient().enrich().executePolicy(p -> p
-				.name(policyName)
-				.waitForCompletion(true)
-			);
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
 	}
 
 	public void computeGene2SynonymsEnrichedIndex() {
@@ -73,7 +52,7 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 				.match(m -> m
 					.indices(getQueryIndexName())
 					.matchField("gene")
-					.enrichFields("type", "value")
+					.enrichFields("type", "value", "species")
 				));
 			getESClient().enrich().executePolicy(p -> p
 				.name(policyName)

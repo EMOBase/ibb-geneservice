@@ -3,7 +3,6 @@ package ibb.api.geneservice.startup;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -12,9 +11,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import ibb.api.geneservice.domains.genomic.GenomicLocation;
 import ibb.api.geneservice.domains.genomic.GenomicLocationIndex;
 import ibb.api.geneservice.domains.genomic.GenomicLocationParser;
-import ibb.api.geneservice.domains.ortholog.OrthogroupIndex;
-import ibb.api.geneservice.domains.ortholog.OrthologIndex;
-import ibb.api.geneservice.domains.ortholog.OrthologParser;
+import ibb.api.geneservice.domains.orthology.OrthologyIndex;
+import ibb.api.geneservice.domains.orthology.OrthologyParser;
 import ibb.api.geneservice.domains.sequence.Sequence;
 import ibb.api.geneservice.domains.sequence.SequenceIndex;
 import ibb.api.geneservice.domains.sequence.SequenceParser;
@@ -24,9 +22,8 @@ import ibb.api.geneservice.domains.synonym.FlyBaseSynonymParser;
 import ibb.api.geneservice.domains.synonym.GFF3SynonymParser;
 import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.domains.synonym.SynonymIndex;
-import ibb.api.geneservice.es.DocumentSource;
+import ibb.api.geneservice.es.ESDocSource;
 import ibb.api.geneservice.parser.TextParser;
-import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -48,8 +45,8 @@ public class StartupActions {
     @ConfigProperty(name = "geneservice.elasticsearch.reload-synonyms", defaultValue = "false")
     boolean reloadSynonyms;
 
-    @ConfigProperty(name = "geneservice.elasticsearch.reload-orthologs", defaultValue = "false")
-    boolean reloadOrthologs;
+    @ConfigProperty(name = "geneservice.elasticsearch.reload-orthology", defaultValue = "false")
+    boolean reloadOrthology;
 
     @Inject
     GenomicLocationIndex genomicLocationIndex;
@@ -61,15 +58,13 @@ public class StartupActions {
     SynonymIndex synonymIndex;
 
     @Inject
-    OrthologIndex orthologIndex;
-
-    @Inject
-    OrthogroupIndex orthogroupIndex;
+    OrthologyIndex orthologyIndex;
 
     public void init(@Observes StartupEvent event) {
         reloadGenomicLocations = reloadGenomicLocations || !genomicLocationIndex.exists();
         if (reloadGenomicLocations) {
             genomicLocationIndex.delete();
+            genomicLocationIndex.setup();
             listSubDirs("species")
                 .map(this::getGenomicLocationSources)
                 .flatMap(s -> s)
@@ -81,6 +76,7 @@ public class StartupActions {
         reloadSequences = reloadSequences || !sequenceIndex.exists();
         if (reloadSequences) {
             sequenceIndex.delete();
+            sequenceIndex.setup();
             listSubDirs("species")
                 .map(this::getSequenceSources)
                 .flatMap(s -> s)
@@ -89,13 +85,12 @@ public class StartupActions {
             Log.info("Sequence index already exists");
         }
 
-        reloadOrthologs = reloadOrthologs || !orthologIndex.exists();
+        reloadOrthology = reloadOrthology || !orthologyIndex.exists();
         reloadSynonyms = reloadSynonyms || !synonymIndex.exists();
 
         if (reloadSynonyms) {
-            orthologIndex.delete();
-            orthogroupIndex.delete();
             synonymIndex.delete();
+            synonymIndex.setup();
 
             listSubDirs("species")
                 .map(this::getSynonymSources)
@@ -105,31 +100,23 @@ public class StartupActions {
             synonymIndex.refresh();
             if (synonymIndex.exists()) {
                 Log.info("Computing enriched indices from synonym index");
-                synonymIndex.computeSynonym2GeneEnrichedIndex();
                 synonymIndex.computeGene2SynonymsEnrichedIndex();
-                reloadOrthologs = true;
+                reloadOrthology = true;
             }
         } else {
             Log.info("Synonym index already exists");
         }
 
-        if (reloadOrthologs) {
-            orthologIndex.delete();
-            String orthologPipeline = orthologIndex.createPipeline();
+        if (reloadOrthology) {
+            orthologyIndex.delete();
+            orthologyIndex.setup();
             File[] files = Path.of(dataDir, "orthology").toFile().listFiles(File::isFile);
             Arrays.stream(files)
                 .map(file -> {
                     String orthoSource = file.getName().split("_")[0];
-                    return new DocumentSource<>(file, new OrthologParser(orthoSource))
-                        .withIngestPipeline(orthologPipeline);
+                    return new ESDocSource<>(file, new OrthologyParser(orthoSource));
                 })
-                .forEach(orthologIndex::load);
-            if (orthologIndex.exists()) {
-                orthologIndex.refresh();
-                Log.info("Grouping orthologs by group");
-                orthogroupIndex.delete();
-                orthogroupIndex.transform();
-            }
+                .forEach(orthologyIndex::load);
         } else {
             Log.info("Ortholog index already exists");
         }
@@ -137,63 +124,51 @@ public class StartupActions {
         Log.info("All data loaded");
     }
 
-    private Stream<DocumentSource<GenomicLocation>> getGenomicLocationSources(File dir) {
+    private Stream<ESDocSource<GenomicLocation>> getGenomicLocationSources(File dir) {
         String species = dir.getName();
         return Arrays.stream(dir.listFiles(File::isFile))
             .filter(FileTypes::isGFFFile)
-            .map(file -> {
-                GenomicLocationParser parser;
-                if (Objects.equals(species, "Tcas")) {
-                    parser = new GenomicLocationParser(GFF3GeneIDFinder.byTCLocusTag());
-                } else {
-                    parser = new GenomicLocationParser(GFF3GeneIDFinder.byNCBIGeneID());
-                }
-                return new DocumentSource<>(file, parser).withTags(List.of(species));
-            });
+            .map(file -> new ESDocSource<>(file, new GenomicLocationParser(species)));
     }
 
-    private Stream<DocumentSource<Sequence>> getSequenceSources(File dir) {
+    private Stream<ESDocSource<Sequence>> getSequenceSources(File dir) {
         String species = dir.getName();
         return Arrays.stream(dir.listFiles(File::isFile))
             .map(file -> {
                 SequenceParser parser = null;
                 if (FileTypes.isCDSFile(file)) {
-                    parser = new SequenceParser(SequenceType.CDS);
+                    parser = new SequenceParser(species, SequenceType.CDS);
                 } else if (FileTypes.isTranscriptFile(file)) {
-                    parser = new SequenceParser(SequenceType.TRANSCRIPT);
+                    parser = new SequenceParser(species, SequenceType.TRANSCRIPT);
                 } else if (FileTypes.isProteinFile(file)) {
-                    parser = new SequenceParser(SequenceType.PROTEIN);
+                    parser = new SequenceParser(species, SequenceType.PROTEIN);
                 }
                 if (parser == null) {
                     return null;
                 } else {
-                    return new DocumentSource<>(file, parser).withTags(List.of(species));
+                    return new ESDocSource<>(file, parser);
                 }
             })
             .filter(Objects::nonNull);
     }
 
-    private Stream<DocumentSource<Synonym>> getSynonymSources(File dir) {
+    private Stream<ESDocSource<Synonym>> getSynonymSources(File dir) {
         String species = dir.getName();
         return Arrays.stream(dir.listFiles(File::isFile))
             .map(file -> {
                 TextParser<Synonym> parser = null;
                 if (Objects.equals("Dmel", species)) {
                     if (FileTypes.isFlyBaseSynonymFile(file)) {
-                        parser = new FlyBaseSynonymParser();
+                        parser = new FlyBaseSynonymParser(species);
                     } else if (FileTypes.isFlyBaseGeneRNAProteinMapFile(file)) {
-                        parser = new FlyBaseGeneRNAProteinMapParser();
+                        parser = new FlyBaseGeneRNAProteinMapParser(species);
                     }
                 }
                 if (FileTypes.isGFFFile(file)) {
-                    if (Objects.equals(species, "Tcas")) {
-                        parser = new GFF3SynonymParser(GFF3GeneIDFinder.byTCLocusTag());
-                    } else {
-                        parser = new GFF3SynonymParser(GFF3GeneIDFinder.byNCBIGeneID());
-                    }
+                    parser = new GFF3SynonymParser(species);
                 }
                 if (parser != null) {
-                    return new DocumentSource<>(file, parser).withTags(List.of(species));
+                    return new ESDocSource<>(file, parser);
                 }
                 return null;
             })

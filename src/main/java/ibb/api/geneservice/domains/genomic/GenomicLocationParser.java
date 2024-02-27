@@ -13,9 +13,15 @@ import ibb.api.geneservice.parser.gff3.GFF3Parser;
 public class GenomicLocationParser implements TextParser<GenomicLocation> {
 
     private GFF3GeneIDFinder gff3GeneIDFinder;
+    private String species;
 
-    public GenomicLocationParser(GFF3GeneIDFinder geneIDFinder) {
-        this.gff3GeneIDFinder = geneIDFinder;
+    public GenomicLocationParser(String species) {
+        this.species = species;
+        if (Objects.equals("Tcas", species)) {
+            gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
+        } else {
+            gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
+        }
     }
 
     @Override
@@ -25,9 +31,10 @@ public class GenomicLocationParser implements TextParser<GenomicLocation> {
             .filter(gff3Record -> Objects.equals("gene", gff3Record.getType()))
             .map(record -> {
                 GenomicLocation loc = new GenomicLocation();
-                loc.id = gff3GeneIDFinder.findGeneId(record).map(id -> id.current).orElseThrow(
+                loc.gene = gff3GeneIDFinder.findGeneId(record).map(id -> id.current).orElseThrow(
                     () -> new TextParserException(gff3Parser.getLineNumber(), "Can't find gene xref id")
                 );
+                loc.species = species;
                 loc.referenceSeq = record.getSeqId();
                 loc.start = record.getStart();
                 loc.end = record.getEnd();

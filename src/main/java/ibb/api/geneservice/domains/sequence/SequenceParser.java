@@ -10,8 +10,10 @@ import ibb.api.geneservice.parser.fasta.FastaParser;
 public class SequenceParser implements TextParser<Sequence> {
 
     private SequenceType type;
+    private String species;
 
-    public SequenceParser(SequenceType type) {
+    public SequenceParser(String species, SequenceType type) {
+        this.species = species;
         this.type = type;
     }
 
@@ -23,6 +25,7 @@ public class SequenceParser implements TextParser<Sequence> {
                 sequence.name = record.header;
                 sequence.sequence = record.sequence;
                 sequence.type = type;
+                sequence.species = species;
                 return sequence;
             });
     }

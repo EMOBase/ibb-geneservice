@@ -12,7 +12,12 @@ import ibb.api.geneservice.parser.TextParserException;
 
 public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
 
-    AtomicInteger lineCount = new AtomicInteger(0);
+    private AtomicInteger lineCount = new AtomicInteger(0);
+    private String species;
+
+    public FlyBaseGeneRNAProteinMapParser(String species) {
+        this.species = species;
+    }
 
     @Override
     public Stream<Synonym> parse(Path path) throws IOException {
@@ -41,13 +46,13 @@ public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
         var synonyms = new ArrayList<Synonym>();
 
         if (!transcript.isBlank()) {
-            synonyms.add(new Synonym(gene, Synonym.Type.TRANSCRIPT, transcript));
+            synonyms.add(new Synonym(species, gene, Synonym.Type.TRANSCRIPT, transcript));
         }
 
         if (cols.length >= 3) {
             String protein = cols[2];
             if (!protein.isBlank()) {
-                synonyms.add(new Synonym(gene, Synonym.Type.PROTEIN, protein));
+                synonyms.add(new Synonym(species, gene, Synonym.Type.PROTEIN, protein));
             }
         }
         return synonyms;
