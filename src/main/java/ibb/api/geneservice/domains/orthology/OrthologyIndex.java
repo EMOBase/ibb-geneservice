@@ -25,6 +25,7 @@ public class OrthologyIndex extends ESSourceIndex<Orthology> {
         return TypeMapping.of(t -> t
             .properties("source", p -> p.keyword(k -> k))
             .properties("group", p -> p.keyword(k -> k))
+            .properties("priority", p -> p.integer(i -> i))
             .properties("orthologs", p -> p.object(o -> o
                 .properties("gene", p2 -> p2.keyword(k -> k))
                 .properties("species", p2 -> p2.keyword(k -> k))

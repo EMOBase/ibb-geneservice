@@ -114,8 +114,13 @@ public class StartupActions {
             File[] files = Path.of(dataDir, "orthology").toFile().listFiles(File::isFile);
             Arrays.stream(files)
                 .map(file -> {
-                    String orthoSource = file.getName().split("_")[0];
-                    return new ESDocSource<>(file, new OrthologyParser(orthoSource));
+                    String orthoPrefix = file.getName().split("_")[0];
+                    String[] parts = orthoPrefix.split("\\.", 2);
+                    if (parts.length == 2) {
+                        return new ESDocSource<>(file, new OrthologyParser(parts[1], Integer.parseInt(parts[0])));
+                    } else {
+                        return new ESDocSource<>(file, new OrthologyParser(orthoPrefix));
+                    }
                 })
                 .forEach(orthologyIndex::load);
         } else {

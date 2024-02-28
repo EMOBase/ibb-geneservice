@@ -14,6 +14,7 @@ public class Orthology implements ESDoc {
 
     public String group;
     public String source;
+    public int priority;
     public List<Ortholog> orthologs = new ArrayList<>();
 
     @Override

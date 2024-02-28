@@ -11,12 +11,18 @@ import ibb.api.geneservice.parser.TextParser;
 
 public class OrthologyParser implements TextParser<Orthology> {
 
+    private int priority;
     private String source;
     private String[] headers;
     private final String delimiter = "\t";
 
-    public OrthologyParser(String source) {
+    public OrthologyParser(String source, int priority) {
         this.source = source;
+        this.priority = priority;
+    }
+
+    public OrthologyParser(String source) {
+        this(source, 999);
     }
 
     @Override
@@ -38,6 +44,7 @@ public class OrthologyParser implements TextParser<Orthology> {
         Orthology orthology = new Orthology();
         orthology.group = cols[0];
         orthology.source = source;
+        orthology.priority = priority;
 
         for (int i = 1; i < cols.length; i++) {
             for (String gene : cols[i].trim().split(",")) {

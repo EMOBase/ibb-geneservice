@@ -87,6 +87,7 @@ public class SearchEndpoint {
 
         var requestBuilder = new SearchRequest.Builder()
             .index(orthologyIndex.getQueryIndexName())
+            .sort(s -> s.field(f -> f.field("priority").order(SortOrder.Asc)))
             .sort(s -> s.field(f -> f.field("source").order(SortOrder.Asc)))
             .sort(s -> s.score(s2 -> s2.order(SortOrder.Desc)))
             .sort(s -> s.field(f -> f.field("group").order(SortOrder.Asc)))
@@ -96,18 +97,20 @@ public class SearchEndpoint {
             );
 
         if (searchAfter != null && !searchAfter.isEmpty()) {
-            if (searchAfter.size() != 3) {
-                throw new BadRequestException("searchAfter must contain exactly 3 values");
+            if (searchAfter.size() != 4) {
+                throw new BadRequestException("searchAfter must contain exactly 4 values");
             }
             try {
-                var score = Double.parseDouble(searchAfter.get(1));
+                var priority = Integer.parseInt(searchAfter.get(0));
+                var score = Double.parseDouble(searchAfter.get(2));
                 requestBuilder.searchAfter(List.of(
-                    FieldValue.of(searchAfter.get(0)),
+                    FieldValue.of(priority),
+                    FieldValue.of(searchAfter.get(1)),
                     FieldValue.of(score),
-                    FieldValue.of(searchAfter.get(2))
+                    FieldValue.of(searchAfter.get(3))
                 ));
             } catch (NumberFormatException e) {
-                throw new BadRequestException("searchAfter[1] must be a number");
+                throw new BadRequestException("searchAfter[0] and searchAfter[2] must be a number");
             }
         }
         try {

@@ -17,5 +17,6 @@ public class OrthologySearchItem {
 
     public String source;
     public String group;
+    public int priority;
     public List<Ortholog> orthologs;
 }
