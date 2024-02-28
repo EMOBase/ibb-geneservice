@@ -2,12 +2,16 @@ package ibb.api.geneservice.search;
 
 import java.util.List;
 
-import ibb.api.geneservice.domains.synonym.Synonym;
+public class OrthologySearchItem {
 
-public class OrthologSearchItem {
+    public static class Synonym {
+        public String synonym;
+        public String type;
+    }
 
     public static class Ortholog {
         public String gene;
+        public String species;
         public List<Synonym> synonyms;
     }
 

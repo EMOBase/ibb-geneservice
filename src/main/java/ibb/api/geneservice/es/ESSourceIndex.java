@@ -12,6 +12,8 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
+import co.elastic.clients.elasticsearch.ingest.Processor;
 import ibb.api.geneservice.parser.TextParserException;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
@@ -44,11 +46,21 @@ public abstract class ESSourceIndex<T> {
 
     public void setup() {
         try {
+            var processors = getPipelineProcessors();
+            if (processors != null) {
+                getESClient().ingest().putPipeline(p -> p
+                    .id(alias + "-pipeline")
+                    .processors(getPipelineProcessors())
+                );
+            }
 			getESClient().indices().putIndexTemplate(it -> it
                 .name(alias + "-template")
                 .indexPatterns(alias + "-*")
                 .template(t -> t
-                    .settings(s -> s.defaultPipeline(getDefaultPipeline()))
+                    .settings(s -> s
+                        .defaultPipeline(processors != null ? alias + "-pipeline" : null)
+                        .analysis(getAnalysis())
+                    )
                     .mappings(getTypeMapping())
                     .aliases(alias,  a -> a)
                 )
@@ -100,6 +112,7 @@ public abstract class ESSourceIndex<T> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        getESHelper().deletePipelineIgnoreUnavailable(alias + "-pipeline");
     }
 
     public void load(ESDocSource<?> source) {
@@ -164,11 +177,7 @@ public abstract class ESSourceIndex<T> {
         return esHelper;
     }
 
-    protected TypeMapping getTypeMapping() {
-        return null;
-    };
-
-    protected String getDefaultPipeline() {
-        return null;
-    };
+    protected abstract TypeMapping getTypeMapping();
+    protected abstract List<Processor> getPipelineProcessors();
+    protected abstract IndexSettingsAnalysis getAnalysis();
 }

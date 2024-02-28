@@ -25,7 +25,7 @@ public class FlyBaseSynonymParser implements TextParser<Synonym> {
             .filter(line -> !line.isBlank())
             .map(this::parseLine)
             .flatMap(List::stream)
-            .filter(s -> s.value != null && !s.value.isBlank());
+            .filter(s -> s.synonym != null && !s.synonym.isBlank());
     }
 
     public List<Synonym> parseLine(String line) {

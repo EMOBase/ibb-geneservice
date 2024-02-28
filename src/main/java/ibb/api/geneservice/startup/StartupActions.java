@@ -89,6 +89,7 @@ public class StartupActions {
         reloadSynonyms = reloadSynonyms || !synonymIndex.exists();
 
         if (reloadSynonyms) {
+            orthologyIndex.delete();
             synonymIndex.delete();
             synonymIndex.setup();
 

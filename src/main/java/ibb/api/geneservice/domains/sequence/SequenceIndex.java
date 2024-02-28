@@ -1,6 +1,10 @@
 package ibb.api.geneservice.domains.sequence;
 
+import java.util.List;
+
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
+import co.elastic.clients.elasticsearch.ingest.Processor;
 import ibb.api.geneservice.es.ESSourceIndex;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -20,4 +24,14 @@ public class SequenceIndex extends ESSourceIndex<Sequence> {
             .properties("type", p -> p.keyword(k -> k))
         );
 	}
+
+    @Override
+    protected List<Processor> getPipelineProcessors() {
+        return null;
+    }
+
+    @Override
+    protected IndexSettingsAnalysis getAnalysis() {
+        return null;
+    }
 }

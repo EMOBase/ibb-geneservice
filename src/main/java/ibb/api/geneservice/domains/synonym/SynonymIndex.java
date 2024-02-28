@@ -2,8 +2,11 @@ package ibb.api.geneservice.domains.synonym;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
+import co.elastic.clients.elasticsearch.ingest.Processor;
 import ibb.api.geneservice.es.ESSourceIndex;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -36,8 +39,20 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 			.properties("species", p -> p.keyword(k -> k))
 			.properties("gene", p -> p.keyword(k -> k))
 			.properties("type", p -> p.keyword(k -> k))
-			.properties("value", p -> p.text(tx -> tx))
+			.properties("synonym", p -> p.searchAsYouType(s -> s.analyzer("synonym")))
 		);
+	}
+
+	@Override
+	protected IndexSettingsAnalysis getAnalysis() {
+        return IndexSettingsAnalysis.of(a -> a
+            .analyzer("synonym", an -> an
+                .custom(c -> c
+                    .tokenizer("whitespace")
+                    .filter("lowercase")
+                )
+            )
+        );
 	}
 
 	public String getGene2SynonymsPolicyName() {
@@ -52,7 +67,7 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 				.match(m -> m
 					.indices(getQueryIndexName())
 					.matchField("gene")
-					.enrichFields("type", "value", "species")
+					.enrichFields("type", "synonym", "species")
 				));
 			getESClient().enrich().executePolicy(p -> p
 				.name(policyName)
@@ -61,5 +76,10 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	@Override
+	protected List<Processor> getPipelineProcessors() {
+		return null;
 	}
 }

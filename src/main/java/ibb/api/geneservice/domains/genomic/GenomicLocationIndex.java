@@ -1,6 +1,10 @@
 package ibb.api.geneservice.domains.genomic;
 
+import java.util.List;
+
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
+import co.elastic.clients.elasticsearch.ingest.Processor;
 import ibb.api.geneservice.es.ESSourceIndex;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -21,5 +25,15 @@ public class GenomicLocationIndex extends ESSourceIndex<GenomicLocation> {
 			.properties("end", p -> p.integer(i -> i.index(false)))
 			.properties("strand", p -> p.keyword(k -> k.index(false)))
 		);
+	}
+
+	@Override
+	protected List<Processor> getPipelineProcessors() {
+		return null;
+	}
+
+	@Override
+	protected IndexSettingsAnalysis getAnalysis() {
+		return null;
 	}
 }
