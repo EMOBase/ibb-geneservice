@@ -39,7 +39,10 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 			.properties("species", p -> p.keyword(k -> k))
 			.properties("gene", p -> p.keyword(k -> k))
 			.properties("type", p -> p.keyword(k -> k))
-			.properties("synonym", p -> p.searchAsYouType(s -> s.analyzer("synonym")))
+			.properties("synonym", p -> p.searchAsYouType(s -> s
+				.analyzer("synonym")
+				.fields("keyword", k -> k.keyword(kk -> kk))
+			))
 		);
 	}
 

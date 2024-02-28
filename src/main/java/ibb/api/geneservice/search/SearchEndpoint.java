@@ -6,13 +6,18 @@ import java.util.List;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import ibb.api.geneservice.domains.genomic.GenomicLocationIndex;
 import ibb.api.geneservice.domains.orthology.OrthologyIndex;
-import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.domains.synonym.SynonymIndex;
+import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 
@@ -33,48 +38,84 @@ public class SearchEndpoint {
 
     @GET
     @Path("/_suggest")
-    public SearchResult<Synonym> suggest(@RestQuery("q") String query) throws IOException {
-        var response = esClient.search(r -> r
-            .query(q -> q.functionScore(f -> f
-                .functions(f2 -> f2.scriptScore(s -> s
-                    .script(s2 -> s2.inline(i -> i.source(
-                        "('NAME'.equals(doc['type'].value) || 'SYMBOL'.equals(doc['type'].value)) ? 5 : 1"
-                    )))
-                ))
-                .query(q2 -> q2.multiMatch(m -> m
+    public SearchResult<SuggestItem> suggest(
+        @RestQuery("q") String query,
+        @RestQuery("searchAfter") List<String> searchAfter
+    ) throws IOException {
+
+        if (query == null || query.isBlank()) {
+            throw new BadRequestException("Query is required");
+        }
+
+        var requestBuilder = new SearchRequest.Builder()
+            .index(synonymIndex.getQueryIndexName())
+            .collapse(c -> c.field("synonym.keyword"))
+            .sort(s -> s.field(f -> f.field("synonym.keyword").order(SortOrder.Asc)))
+            .query(q2 -> q2
+                .multiMatch(m -> m
                     .query(query)
                     .type(TextQueryType.BoolPrefix)
                     .fields(
                         "synonym",
                         "synonym._2gram",
                         "synonym._3gram"
-                    )
-                ))
-            ))
-        , Synonym.class);
-        return SearchResult.of(response);
+                    ))
+            );
+        if (searchAfter != null && !searchAfter.isEmpty()) {
+            if (searchAfter.size() != 1) {
+                throw new BadRequestException("searchAfter must contain exactly one value");
+            }
+            requestBuilder.searchAfter(searchAfter.stream().map(FieldValue::of).toList());
+        }
+        try {
+            var response = esClient.search(requestBuilder.build(), SuggestItem.class);
+            return SearchResult.of(response);
+        } catch (ElasticsearchException e) {
+            Log.debug(e.error().causedBy());
+            throw e;
+        }
     }
 
     @GET
-    @Path("/orthology")
-    public SearchResult<OrthologySearchItem> searchOrthology(@RestQuery String q) throws IOException {
-        var response = esClient.search(r -> r
+    public SearchResult<OrthologySearchItem> searchOrthology(
+        @RestQuery("q") String query,
+        @RestQuery("searchAfter") List<String> searchAfter
+    ) throws IOException {
+        if (query == null || query.isBlank()) {
+            throw new BadRequestException("Query is required");
+        }
+
+        var requestBuilder = new SearchRequest.Builder()
             .index(orthologyIndex.getQueryIndexName())
-            .q(q)
-            .defaultOperator(Operator.And)
-        , OrthologySearchItem.class);
-        return SearchResult.of(response);
-    }
+            .sort(s -> s.field(f -> f.field("source").order(SortOrder.Asc)))
+            .sort(s -> s.score(s2 -> s2.order(SortOrder.Desc)))
+            .sort(s -> s.field(f -> f.field("group").order(SortOrder.Asc)))
+            .query(q -> q.simpleQueryString(s -> s
+                .query(query)
+                .defaultOperator(Operator.And))
+            );
 
-    @GET
-    @Path("/gene")
-    public SearchResult<GeneSearchItem> searchGene(@RestQuery String q) throws IOException {
-        List<String> indices = List.of(
-            synonymIndex.getQueryIndexName(),
-            genomicLocationIndex.getQueryIndexName()
-        );
-
-        var response = esClient.search(r -> r.index(indices).q(q), GeneSearchItem.class);
-        return SearchResult.of(response);
+        if (searchAfter != null && !searchAfter.isEmpty()) {
+            if (searchAfter.size() != 3) {
+                throw new BadRequestException("searchAfter must contain exactly 3 values");
+            }
+            try {
+                var score = Double.parseDouble(searchAfter.get(1));
+                requestBuilder.searchAfter(List.of(
+                    FieldValue.of(searchAfter.get(0)),
+                    FieldValue.of(score),
+                    FieldValue.of(searchAfter.get(2))
+                ));
+            } catch (NumberFormatException e) {
+                throw new BadRequestException("searchAfter[1] must be a number");
+            }
+        }
+        try {
+            var response = esClient.search(requestBuilder.build(), OrthologySearchItem.class);
+            return SearchResult.of(response);
+        } catch (ElasticsearchException e) {
+            Log.debug(e.error().causedBy());
+            throw e;
+        }
     }
 }
