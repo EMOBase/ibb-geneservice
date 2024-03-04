@@ -1,4 +1,4 @@
-package ibb.api.geneservice.domains.synonym;
+package ibb.api.geneservice.domains.synonym.parser;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -17,11 +17,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import ibb.api.geneservice.domains.genomic.GenomicLocation;
+import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
 import ibb.api.geneservice.parser.gff3.GFF3Parser;
 import ibb.api.geneservice.parser.gff3.GFF3Record;
+import ibb.api.geneservice.utils.SpeciesHelper;
 
 public class GFF3SynonymParser implements TextParser<Synonym> {
 
@@ -30,7 +32,7 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
 
     public GFF3SynonymParser(String species) {
         this.species = species;
-        if (Objects.equals("Tcas", species)) {
+        if (SpeciesHelper.isSameSpecies("Tcas", species)) {
             gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
         } else {
             gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();

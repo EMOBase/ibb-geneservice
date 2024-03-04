@@ -1,4 +1,4 @@
-package ibb.api.geneservice.domains.synonym;
+package ibb.api.geneservice.domains.synonym.parser;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 

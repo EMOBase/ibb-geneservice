@@ -2,65 +2,55 @@ package ibb.api.geneservice.es;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
-import co.elastic.clients.elasticsearch._helpers.bulk.BulkListener;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
-import co.elastic.clients.elasticsearch.ingest.Processor;
 import ibb.api.geneservice.parser.TextParserException;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
+import io.quarkus.runtime.StartupEvent;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
-public abstract class ESSourceIndex<T> {
-
-    @Inject
-    ESHelper esHelper;
+public abstract class ESSourceIndex<T extends ESDoc> {
 
     /**
      * The key to build names of aliases and indices for this source.
      */
     private String key;
     private String alias;
+    private ESHelper esHelper;
+
+    @Inject
+    ESDocSourceProvider<T> docSourceProvider;
 
     public ESSourceIndex(String key) {
         this.key = key;
     }
+
     
     @Inject
     public void setESHelper(ESHelper esHelper) {
         this.esHelper = esHelper;
-    }
-
-    @PostConstruct
-    protected void init() {
         alias = esHelper.getESName(key);
     }
 
-    public void setup() {
+    protected abstract TypeMapping getTypeMapping();
+    protected abstract IndexSettingsAnalysis getAnalysis();
+    protected abstract boolean shouldDeleteOnStart();
+
+    public void setup(@Observes StartupEvent event) {
+        if (shouldDeleteOnStart()) {
+            delete();
+        }
         try {
-            var processors = getPipelineProcessors();
-            if (processors != null) {
-                getESClient().ingest().putPipeline(p -> p
-                    .id(alias + "-pipeline")
-                    .processors(getPipelineProcessors())
-                );
-            }
 			getESClient().indices().putIndexTemplate(it -> it
                 .name(alias + "-template")
                 .indexPatterns(alias + "-*")
                 .template(t -> t
-                    .settings(s -> s
-                        .defaultPipeline(processors != null ? alias + "-pipeline" : null)
-                        .analysis(getAnalysis())
-                    )
+                    .settings(s -> s.analysis(getAnalysis()))
                     .mappings(getTypeMapping())
                     .aliases(alias,  a -> a)
                 )
@@ -68,6 +58,11 @@ public abstract class ESSourceIndex<T> {
 		} catch (IOException e) {
             throw new UncheckedIOException(e);
 		}
+        if (!exists()) {
+            load();
+        } else {
+            Log.infov("Index {0} already exists", alias);
+        }
     }
 
     public String getQueryIndexName() {
@@ -91,78 +86,42 @@ public abstract class ESSourceIndex<T> {
     }
 
     public void delete() {
-        try {
-            List<String> indices = getESClient().indices().getAlias(a -> a.name(alias)).result()
-                .keySet().stream().toList();
-            getESClient().indices().delete(d -> d.index(indices));
-        } catch (ElasticsearchException e) {
-            if (e.status() != 404) {
-                throw e;
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        try {
-            getESClient().indices().deleteIndexTemplate(d -> d.name(alias + "-template"));
-        } catch (ElasticsearchException e) {
-            if (e.status() != 404) {
-                throw e;
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        getESHelper().deletePipelineIgnoreUnavailable(alias + "-pipeline");
+        getESHelper().deleteIndicesByAliasIgnoreUnavailable(alias);
+        getESHelper().deleteIndexTemplateIgnoreUnavailable(alias + "-template");
     }
 
-    public void load(ESDocSource<?> source) {
-        try {
-            _load(source);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private void _load(ESDocSource<?> source) throws IOException {
+    public void load() {
         String indexName = esHelper.getESName(key, esHelper.getTimestamp());
-        AtomicLong counter = new AtomicLong(0);
-
-        BulkListener<String> listener = new BulkListener<>() {
-
-            @Override
-            public void beforeBulk(long executionId, BulkRequest request, List<String> contexts) {
+        docSourceProvider.provideDocSources().forEach(source -> {
+            try {
+                load(source, indexName);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
+        });
+    }
 
-            @Override
-            public void afterBulk(long executionId, BulkRequest request, List<String> contexts, BulkResponse response) {
-                counter.getAndAdd(contexts.size());
-                if (response.errors()) {
-                    long count = response.items().stream().filter(i -> i.error() != null).count();
-                    Log.errorv("Failed to index {0}/{1} {2} items", count, contexts.size(), alias);
-                    counter.getAndAdd(-count);
-                } else {
-                    Log.debugv("Indexed {0} {1} items", contexts.size(), alias);
-                }
-            }
-
-            @Override
-            public void afterBulk(long executionId, BulkRequest request, List<String> contexts, Throwable failure) {
-                Log.errorv(failure, "Failed to index {0} {1} items", contexts.size(), alias);
-            }
-        };
+    private void load(ESDocSource<?> source, String indexName) throws IOException {
         try (
             var items = source.stream();
-            BulkIngester<String> ingester = BulkIngester.of(b -> b.client(getESClient()).listener(listener))
+            BulkIngester<String> ingester = BulkIngester.of(b -> b.client(getESClient()))
         ) {
+            AtomicLong count = new AtomicLong();
             Log.infov("Loading {0} from {1}", alias, source.file.toPath().toString());
             items.forEach(item -> {
+                count.incrementAndGet();
                 ingester.add(op -> op
                     .index(idx -> idx
                         .id(item._id())
                         .index(indexName)
                         .document(item)
-                    ), item._id());
+                    ));
             });
+            if (count.get() == 0) {
+                Log.warnv("No items found in {0}", source.file.toPath().toString());
+            } else {
+                Log.infov("Sent {0} items to Elasticsearch", count.get());
+            }
         } catch (TextParserException e) {
             getESClient().indices().delete(d -> d.index(indexName).ignoreUnavailable(true));
             throw e;
@@ -176,8 +135,4 @@ public abstract class ESSourceIndex<T> {
     protected ESHelper getESHelper() {
         return esHelper;
     }
-
-    protected abstract TypeMapping getTypeMapping();
-    protected abstract List<Processor> getPipelineProcessors();
-    protected abstract IndexSettingsAnalysis getAnalysis();
 }

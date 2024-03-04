@@ -9,6 +9,7 @@ import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
 import ibb.api.geneservice.parser.gff3.GFF3Parser;
+import ibb.api.geneservice.utils.SpeciesHelper;
 
 public class GenomicLocationParser implements TextParser<GenomicLocation> {
 
@@ -17,7 +18,7 @@ public class GenomicLocationParser implements TextParser<GenomicLocation> {
 
     public GenomicLocationParser(String species) {
         this.species = species;
-        if (Objects.equals("Tcas", species)) {
+        if (SpeciesHelper.isSameSpecies("Tcas", species)) {
             gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
         } else {
             gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();

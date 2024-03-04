@@ -20,7 +20,7 @@ public class ESDocSource<T extends ESDoc>{
      * Open a stream to the file and parse its content.
      * @return a stream of parsed objects
      * @throws IOException if an I/O error occurs
-     * @apiNote This method must be used within a try-with-resources statement or similar control structure to ensure that the stream's open file is closed promptly after the stream's operations have completed.
+     * @apiNote This method must be used within a try-with-resources statement or similar control structure to ensure that the stream's open file is closed properly after the stream's operations have completed.
      */
     public Stream<T> stream() throws IOException {
         return parser.parse(file.toPath());

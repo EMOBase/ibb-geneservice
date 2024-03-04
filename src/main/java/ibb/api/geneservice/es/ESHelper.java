@@ -13,6 +13,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.analysis.Analyzer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -25,53 +26,58 @@ public class ESHelper {
     @Inject
     ElasticsearchClient esClient;
 
-    public ElasticsearchClient getESClient() {
-        return esClient;
-    }
-
-    public boolean enrichPolicyExists(String policyName) {
-		try {
-			return getESClient().enrich().getPolicy(p -> p.name(policyName)).policies().size() > 0;
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
-
-    public void deleteEnrichPolicyIgnoreUnavailable(String policyName) {
-		try {
-			getESClient().enrich().deletePolicy(p -> p.name(policyName));
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		} catch (ElasticsearchException e) {
-			if (e.status() != 404) {
-				throw e;
-			}
-		}
-    }
-
-	public void deletePipelineIgnoreUnavailable(String pipelineName) {
-		try {
-			getESClient().ingest().deletePipeline(p -> p.id(pipelineName));
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		} catch (ElasticsearchException e) {
-			if (e.status() != 404) {
-				throw e;
-			}
-		}
-	}
-
-    public void deleteTransformIgnoreUnavailable(String transformName) {
+    public void deleteIndicesByAliasIgnoreUnavailable(String alias) {
         try {
-            getESClient().transform().deleteTransform(t -> t.transformId(transformName));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            List<String> indices = getESClient().indices()
+                .getAlias(a -> a.name(alias))
+                .result().keySet().stream().toList();
+
+            if (!indices.isEmpty()) {
+                getESClient().indices().delete(d -> d.index(indices));
+            }
         } catch (ElasticsearchException e) {
             if (e.status() != 404) {
                 throw e;
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
+    
+    public void deleteIndexTemplateIgnoreUnavailable(String name) {
+        try {
+            getESClient().indices().deleteIndexTemplate(d -> d.name(name));
+        } catch (ElasticsearchException e) {
+            if (e.status() != 404) {
+                throw e;
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public Analyzer getWhitespaceLowercaseAnalyzer() {
+        return Analyzer.of(a -> a
+            .custom(c -> c
+                .tokenizer("whitespace")
+                .filter("lowercase")
+            )
+        );
+    }
+
+    public Analyzer getKeywordLowercaseAnalyzer() {
+        return Analyzer.of(a -> a
+            .custom(c -> c
+                .tokenizer("keyword")
+                .filter("lowercase")
+            )
+        );
+    }
+
+    public ElasticsearchClient getESClient() {
+        return esClient;
+    }
+
 
     /**
      * Build an elasticsearch name from the given suffices.

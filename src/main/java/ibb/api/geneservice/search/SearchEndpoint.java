@@ -77,6 +77,7 @@ public class SearchEndpoint {
     }
 
     @GET
+    @Path("/orthology")
     public SearchResult<OrthologySearchItem> searchOrthology(
         @RestQuery("q") String query,
         @RestQuery("searchAfter") List<String> searchAfter
@@ -120,5 +121,19 @@ public class SearchEndpoint {
             Log.debug(e.error().causedBy());
             throw e;
         }
+    }
+
+    @GET
+    @Path("/gene")
+    public SearchResult<GeneSearchItem> searchGene(@RestQuery("q") String query) throws IOException {
+        if (query == null || query.isBlank()) {
+            throw new BadRequestException("Query is required");
+        }
+        var response = esClient.search(s -> s
+            .index(genomicLocationIndex.getQueryIndexName(), synonymIndex.getQueryIndexName())
+            .collapse(c -> c.field("gene.keyword"))
+            .query(q -> q)
+        , GeneSearchItem.class);
+        return SearchResult.of(response);
     }
 }

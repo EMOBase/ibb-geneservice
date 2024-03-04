@@ -1,61 +1,33 @@
-# geneservice
+# Gene Service for the iBeetle-Base project
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+## Development
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+Prerequisites:
+- [quarkus-cli](https://quarkus.io/guides/cli-tooling) is installed.
 
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
-```shell script
-./mvnw compile quarkus:dev
+To run the application in dev mode, run:
+```bash
+quarkus dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+These commands might be useful after a long time not working on this project:
 
-## Packaging and running the application
+- `quarkus update`: Update all quarkus dependencies to latest versions
+- `./mvnw -N wrapper:wrapper -Dmaven=3.8.7`: Update maven wrapper to new version, in this case `3.8.7`
+- `quarkus test`: Ensure all the tests still pass
 
-The application can be packaged using:
-```shell script
-./mvnw package
+## Deployment
+
+To run tests and build docker image:
 ```
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-```shell script
-./mvnw package -Dquarkus.package.type=uber-jar
+quarkus build -Dquarkus.container-image.build=true
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using: 
-```shell script
-./mvnw package -Dnative
+To run the same thing as above but in 2 commands:
+```
+quarkus test --once
+quarkus build -Dquarkus.container-image.build=true -DskipTests
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/geneservice-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
-
-## Related Guides
-
-- Elasticsearch Java Client ([guide](https://quarkus.io/guides/elasticsearch)): Connect to an Elasticsearch cluster using the Java client
-- SmallRye OpenAPI ([guide](https://quarkus.io/guides/openapi-swaggerui)): Document your REST APIs with OpenAPI - comes with Swagger UI
-
-## Provided Code
-
-### RESTEasy Reactive
-
-Easily start your Reactive RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+Prerequisites before running the docker container:
+- An elasticsearch instance is accessible at `es:9200`.

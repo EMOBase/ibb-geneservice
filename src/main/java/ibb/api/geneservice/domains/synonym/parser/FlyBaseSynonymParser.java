@@ -1,14 +1,15 @@
-package ibb.api.geneservice.domains.synonym;
+package ibb.api.geneservice.domains.synonym.parser;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
+import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.parser.TextParser;
+import ibb.api.geneservice.utils.SpeciesHelper;
 
 public class FlyBaseSynonymParser implements TextParser<Synonym> {
 
@@ -38,7 +39,7 @@ public class FlyBaseSynonymParser implements TextParser<Synonym> {
 
         String geneId = cols[0];
         String infileSpecies = cols[1];
-        if (!Objects.equals(species, infileSpecies) || !geneId.startsWith("FBgn")) {
+        if (!SpeciesHelper.isSameSpecies(species, infileSpecies) || !geneId.startsWith("FBgn")) {
             return List.of();
         }
 
