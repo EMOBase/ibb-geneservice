@@ -1,7 +1,0 @@
-package ibb.api.geneservice.search;
-
-public class SuggestItem {
-    public String gene;
-    public String species;
-    public String synonym;
-}

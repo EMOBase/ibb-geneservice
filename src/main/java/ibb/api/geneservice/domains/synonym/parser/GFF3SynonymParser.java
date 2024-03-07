@@ -23,16 +23,16 @@ import ibb.api.geneservice.parser.TextParserException;
 import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
 import ibb.api.geneservice.parser.gff3.GFF3Parser;
 import ibb.api.geneservice.parser.gff3.GFF3Record;
-import ibb.api.geneservice.utils.SpeciesHelper;
+import ibb.api.geneservice.utils.Species;
 
-public class GFF3SynonymParser implements TextParser<Synonym> {
+public class GFF3SynonymParser extends TextParser<Synonym> {
 
     private GFF3GeneIDFinder gff3GeneIDFinder;
-    private String species;
+    private Species species;
 
-    public GFF3SynonymParser(String species) {
+    public GFF3SynonymParser(Species species) {
         this.species = species;
-        if (SpeciesHelper.isSameSpecies("Tcas", species)) {
+        if (Objects.equals(species, Species.of("Tcas"))) {
             gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
         } else {
             gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
@@ -118,13 +118,17 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
             var geneXrefIdGroup = synonymParser.gff3GeneIDFinder.findGeneId(geneRecord).orElseThrow(
                 () -> new TextParserException(gff3Parser.getLineNumber(), "Can't find gene xref id")
             );
-            String geneXrefId = geneXrefIdGroup.current;
+
+            Species species = synonymParser.species;
+            String gene = species.createGeneId(geneXrefIdGroup.current);
+            synonyms.add(new Synonym(gene, Synonym.Type.CURRENT_ID, geneXrefIdGroup.current));
+
             geneXrefIdGroup.previous.stream()
-                .map((previous) -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.OLD_ID, previous))
+                .map((previous) -> new Synonym(gene, Synonym.Type.OLD_ID, previous))
                 .forEach(synonyms::add);
 
             geneRecord.getAttributeFirstValueOptional("description")
-                .map(name -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.NAME, name))
+                .map(name -> new Synonym(gene, Synonym.Type.NAME, name))
                 .ifPresent(synonyms::add); 
 
             String geneLocalId = geneRecord.getId();
@@ -159,11 +163,11 @@ public class GFF3SynonymParser implements TextParser<Synonym> {
                 }
             });
             mRNAXrefIds.stream()
-                .map((mRNAXrefId) -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.TRANSCRIPT, mRNAXrefId))
+                .map((mRNAXrefId) -> new Synonym(gene, Synonym.Type.TRANSCRIPT, mRNAXrefId))
                 .forEach(synonyms::add);
 
             proteinXrefIds.stream()
-                .map((proteinXrefId) -> new Synonym(synonymParser.species, geneXrefId, Synonym.Type.PROTEIN, proteinXrefId))
+                .map((proteinXrefId) -> new Synonym(gene, Synonym.Type.PROTEIN, proteinXrefId))
                 .forEach(synonyms::add);
             return synonyms;
         }

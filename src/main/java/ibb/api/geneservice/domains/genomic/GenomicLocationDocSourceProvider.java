@@ -8,6 +8,7 @@ import ibb.api.geneservice.es.ESDocSource;
 import ibb.api.geneservice.es.ESDocSourceProvider;
 import ibb.api.geneservice.utils.DataLoader;
 import ibb.api.geneservice.utils.FileTypeHelper;
+import ibb.api.geneservice.utils.Species;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -25,7 +26,7 @@ public class GenomicLocationDocSourceProvider implements ESDocSourceProvider<Gen
     }
 
     private Stream<ESDocSource<GenomicLocation>> findGenomicLocationSources(File speciesDir) {
-        String species = speciesDir.getName();
+        Species species = Species.of(speciesDir.getName());
         return Arrays.stream(speciesDir.listFiles(File::isFile))
             .filter(FileTypeHelper::isGFFFile)
             .map(file -> new ESDocSource<>(file, new GenomicLocationParser(species)));

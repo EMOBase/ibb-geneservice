@@ -14,7 +14,7 @@ public class GenomicLocationIndex extends ESSourceIndex<GenomicLocation> {
     boolean shouldDeleteOnStart;
 
     public GenomicLocationIndex() {
-        super("genomiclocation");
+        super("genomiclocation", GenomicLocation.class);
     }
 
 	@Override

@@ -13,7 +13,7 @@ import java.util.stream.StreamSupport;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 
-public final class FastaParser implements TextParser<FastaRecord> {
+public class FastaParser extends TextParser<FastaRecord> {
 
     /**
      * Parse a FASTA file into a stream of {@link FastaRecord} objects.

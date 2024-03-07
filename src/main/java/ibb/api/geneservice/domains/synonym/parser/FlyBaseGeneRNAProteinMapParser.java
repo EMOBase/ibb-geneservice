@@ -4,29 +4,23 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
+import ibb.api.geneservice.utils.Species;
 
-public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
+public class FlyBaseGeneRNAProteinMapParser extends TextParser<Synonym> {
+    private Species species;
 
-    private AtomicInteger lineCount = new AtomicInteger(0);
-    private String species;
-
-    public FlyBaseGeneRNAProteinMapParser(String species) {
+    public FlyBaseGeneRNAProteinMapParser(Species species) {
         this.species = species;
     }
 
     @Override
     public Stream<Synonym> parse(Path path) throws IOException {
         return parseText(path)
-            .map(line -> {
-                lineCount.incrementAndGet();
-                return line;
-            })
             .filter(line -> !isHeaderLine(line))
             .filter(line -> !line.isBlank())
             .map(this::parseLine)
@@ -38,22 +32,22 @@ public class FlyBaseGeneRNAProteinMapParser implements TextParser<Synonym> {
 
         String[] cols = line.split(delimiter);
         if (cols.length < 2) {
-            throw new TextParserException(lineCount.get(), "FlyBase gene RNA protein map file must have at least 2 columns");
+            throw new TextParserException(getLineNumber(), "FlyBase gene RNA protein map file must have at least 2 columns");
         }
 
-        String gene = cols[0];
+        String gene = species.createGeneId(cols[0]);
         String transcript = cols[1];
 
         var synonyms = new ArrayList<Synonym>();
 
         if (!transcript.isBlank()) {
-            synonyms.add(new Synonym(species, gene, Synonym.Type.TRANSCRIPT, transcript));
+            synonyms.add(new Synonym(gene, Synonym.Type.TRANSCRIPT, transcript));
         }
 
         if (cols.length >= 3) {
             String protein = cols[2];
             if (!protein.isBlank()) {
-                synonyms.add(new Synonym(species, gene, Synonym.Type.PROTEIN, protein));
+                synonyms.add(new Synonym(gene, Synonym.Type.PROTEIN, protein));
             }
         }
         return synonyms;

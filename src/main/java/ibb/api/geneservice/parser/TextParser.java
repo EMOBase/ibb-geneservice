@@ -9,27 +9,39 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 
-public interface TextParser<T> {
+public abstract class TextParser<T> {
+
+    private AtomicLong lineNumber = new AtomicLong(0);
 
     /**
      * @implNote The returned stream must have a close handler that closes the underlying file.
      */
-    Stream<T> parse(Path path) throws IOException;
+    public abstract Stream<T> parse(Path path) throws IOException;
 
-    default Stream<String> parseText(Path path) throws IOException {
+    protected Stream<String> parseText(Path path) throws IOException {
         var inputStream = getInputStream(path.toString());
         var br = new BufferedReader(new InputStreamReader(inputStream));
-        return br.lines().onClose(() -> {
-            try {
-                br.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+        return br.lines()
+            .map(line -> {
+                lineNumber.incrementAndGet();
+                return line;
+            })
+            .onClose(() -> {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+    }
+
+    public long getLineNumber() {
+        return lineNumber.get();
     }
 
     private static InputStream getInputStream(String localPath) throws IOException {

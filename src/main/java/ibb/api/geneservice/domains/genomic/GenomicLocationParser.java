@@ -9,16 +9,16 @@ import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.TextParserException;
 import ibb.api.geneservice.parser.gff3.GFF3GeneIDFinder;
 import ibb.api.geneservice.parser.gff3.GFF3Parser;
-import ibb.api.geneservice.utils.SpeciesHelper;
+import ibb.api.geneservice.utils.Species;
 
-public class GenomicLocationParser implements TextParser<GenomicLocation> {
+public class GenomicLocationParser extends TextParser<GenomicLocation> {
 
     private GFF3GeneIDFinder gff3GeneIDFinder;
-    private String species;
+    private Species species;
 
-    public GenomicLocationParser(String species) {
+    public GenomicLocationParser(Species species) {
         this.species = species;
-        if (SpeciesHelper.isSameSpecies("Tcas", species)) {
+        if (Objects.equals(species, Species.of("Tcas"))) {
             gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
         } else {
             gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
@@ -32,10 +32,10 @@ public class GenomicLocationParser implements TextParser<GenomicLocation> {
             .filter(gff3Record -> Objects.equals("gene", gff3Record.getType()))
             .map(record -> {
                 GenomicLocation loc = new GenomicLocation();
-                loc.gene = gff3GeneIDFinder.findGeneId(record).map(id -> id.current).orElseThrow(
+                String gene = gff3GeneIDFinder.findGeneId(record).map(id -> id.current).orElseThrow(
                     () -> new TextParserException(gff3Parser.getLineNumber(), "Can't find gene xref id")
                 );
-                loc.species = species;
+                loc.gene = species.createGeneId(gene);
                 loc.referenceSeq = record.getSeqId();
                 loc.start = record.getStart();
                 loc.end = record.getEnd();

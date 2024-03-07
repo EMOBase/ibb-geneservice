@@ -7,22 +7,20 @@ import ibb.api.geneservice.es.ESDoc;
 public class Synonym implements ESDoc {
 
     public static enum Type {
-        TRANSCRIPT,
-        PROTEIN,
-        OLD_ID,
+        CURRENT_ID,
         NAME,
         SYMBOL,
-        OTHER_NAME,
-        OTHER_SYMBOL,
+        OLD_ID,
+        TRANSCRIPT,
+        PROTEIN,
+        OTHER,
     }
 
     public String gene;
-    public String species;
     public Type type;
     public String synonym;
 
-    public Synonym(String species, String gene, Type type, String synonym) {
-        this.species = species;
+    public Synonym(String gene, Type type, String synonym) {
         this.gene = gene;
         this.type = type;
         this.synonym = synonym;
@@ -30,6 +28,16 @@ public class Synonym implements ESDoc {
 
     @Override
     public String _id() {
-        return String.join(":", List.of(species, type.name(), synonym));
+        switch (type) {
+            case CURRENT_ID:
+            case NAME:
+            case SYMBOL:
+                // Allow only one synonym of these types
+                return String.join(":", List.of(gene, type.name().toLowerCase()));
+        
+            default:   
+                return String.join(":", List.of(gene, type.name().toLowerCase(), synonym));
+        }
+        
     }
 }

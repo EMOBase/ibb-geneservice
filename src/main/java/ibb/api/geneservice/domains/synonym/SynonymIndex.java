@@ -1,8 +1,13 @@
 package ibb.api.geneservice.domains.synonym;
 
+import java.util.List;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
 import ibb.api.geneservice.es.ESDocSourceProvider;
 import ibb.api.geneservice.es.ESSourceIndex;
@@ -19,7 +24,7 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
     ESDocSourceProvider<Synonym> docSourceProvider;
 
     public SynonymIndex() {
-		super("synonym");
+		super("synonym", Synonym.class);
 	}
 
 	@Override
@@ -42,5 +47,26 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	@Override
 	protected boolean shouldDeleteOnStart() {
 		return shouldDeleteOnStart;
+	}
+
+	public SynonymSuggestResult suggest(String query, List<String> searchAfter) {
+		var requestBuilder = new SearchRequest.Builder()
+			.sort(s -> s.field(f -> f.field("synonym.keyword").order(SortOrder.Asc)))
+			.query(q -> q
+				.matchPhrasePrefix(m -> m
+					.field("synonym")
+					.query(query)
+				)
+			);
+        if (searchAfter != null && !searchAfter.isEmpty()) {
+            requestBuilder.searchAfter(searchAfter.stream().map(FieldValue::of).toList());
+        }
+        return SynonymSuggestResult.of(search(requestBuilder, 20));
+	}
+
+	public List<Synonym> findBySynonym(String synonym) {
+		var requestBuilder = new SearchRequest.Builder()
+			.query(q -> q.term(t -> t.field("synonym.keyword").value(synonym)));
+		return search(requestBuilder).hits().hits().stream().map(h -> h.source()).toList();
 	}
 }

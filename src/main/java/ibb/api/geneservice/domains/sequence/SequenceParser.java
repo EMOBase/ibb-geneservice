@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.parser.fasta.FastaParser;
 
-public class SequenceParser implements TextParser<Sequence> {
+public class SequenceParser extends TextParser<Sequence> {
 
     private SequenceType type;
     private String species;

@@ -2,11 +2,15 @@ package ibb.api.geneservice.es;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
 import ibb.api.geneservice.parser.TextParserException;
 import io.quarkus.logging.Log;
@@ -22,12 +26,14 @@ public abstract class ESSourceIndex<T extends ESDoc> {
     private String key;
     private String alias;
     private ESHelper esHelper;
+    private Class<T> docType;
 
     @Inject
     ESDocSourceProvider<T> docSourceProvider;
 
-    public ESSourceIndex(String key) {
+    public ESSourceIndex(String key, Class<T> docType) {
         this.key = key;
+        this.docType = docType;
     }
 
     
@@ -90,7 +96,49 @@ public abstract class ESSourceIndex<T extends ESDoc> {
         getESHelper().deleteIndexTemplateIgnoreUnavailable(alias + "-template");
     }
 
-    public void load() {
+    public SearchResponse<T> search(SearchRequest.Builder builder, int size) {
+        try {
+            return getESClient().search(builder
+                .size(size)
+                .index(getQueryIndexName())
+                .build()
+            , docType);
+        } catch (ElasticsearchException e) {
+            Log.debug(e.error().causedBy());
+            throw e;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+    
+    /**
+     * Search with a maximum size of 1000 returned items.
+     * Use this if you expect there are not many results and want to return all of them.
+     * Ortherwise, you have to implement pagination.
+     * @param builder
+     * @return
+     */
+    public SearchResponse<T> search(SearchRequest.Builder builder) {
+        return search(builder, 1000);
+    }
+
+    public Optional<T> findById(String id) {
+        try {
+            var response = getESClient().get(g -> g.index(getQueryIndexName()).id(id), docType);
+            if (response.found()) {
+                return Optional.of(response.source());
+            } else {
+                return Optional.empty();
+            }
+        } catch (ElasticsearchException e) {
+            Log.debug(e.error().causedBy());
+            throw e;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void load() {
         String indexName = esHelper.getESName(key, esHelper.getTimestamp());
         docSourceProvider.provideDocSources().forEach(source -> {
             try {
@@ -101,7 +149,7 @@ public abstract class ESSourceIndex<T extends ESDoc> {
         });
     }
 
-    private void load(ESDocSource<?> source, String indexName) throws IOException {
+    private void load(ESDocSource<T> source, String indexName) throws IOException {
         try (
             var items = source.stream();
             BulkIngester<String> ingester = BulkIngester.of(b -> b.client(getESClient()))

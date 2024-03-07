@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import ibb.api.geneservice.parser.TextParser;
@@ -18,7 +17,7 @@ import ibb.api.geneservice.parser.TextParserException;
 /**
  * GFF3 specification: http://gmod.org/wiki/GFF3
  */
-public final class GFF3Parser implements TextParser<GFF3Record> {
+public class GFF3Parser extends TextParser<GFF3Record> {
 
     /** 
      * Parse a GFF3 file into a stream of {@link GFF3Record} objects.
@@ -30,20 +29,10 @@ public final class GFF3Parser implements TextParser<GFF3Record> {
      */
     public Stream<GFF3Record> parse(Path path) throws IOException {
         return parseText(path)
-            .map(line -> {
-                lineNumber.incrementAndGet();
-                return line;
-            })
             .filter(line -> !isHeaderLine(line))
             .filter(line -> !isEmptyLine(line))
             .map(this::parseGFF3Line);
     }
-
-    public int getLineNumber() {
-        return lineNumber.get();
-    }
-
-    private AtomicInteger lineNumber = new AtomicInteger(0);
 
     public GFF3Record parseGFF3Line(String line) {
         final String delimiter = "\t";
@@ -54,7 +43,7 @@ public final class GFF3Parser implements TextParser<GFF3Record> {
             .toArray(String[]::new);
 
         if (cols.length < 9) {
-            throw new TextParserException(lineNumber.get(), "Must have at least 9 columns");
+            throw new TextParserException(getLineNumber(), "Must have at least 9 columns");
         }
 
         String seqId = cols[0];
@@ -70,16 +59,16 @@ public final class GFF3Parser implements TextParser<GFF3Record> {
         GFF3Record.Builder builder = new GFF3Record.Builder()
             .setSeqId(Optional.ofNullable(seqId)
                 .map(this::decodeValue)
-                .orElseThrow(() -> new TextParserException(lineNumber.get(), "SeqId is missing")))
+                .orElseThrow(() -> new TextParserException(getLineNumber(), "SeqId is missing")))
             .setSource(source)
             .setType(Optional.ofNullable(type)
-                .orElseThrow(() -> new TextParserException(lineNumber.get(), "Type is missing")))
+                .orElseThrow(() -> new TextParserException(getLineNumber(), "Type is missing")))
             .setStart(Optional.ofNullable(start)
                 .map(Integer::parseInt)
-                .orElseThrow(() -> new TextParserException(lineNumber.get(), "Start position is missing")))
+                .orElseThrow(() -> new TextParserException(getLineNumber(), "Start position is missing")))
             .setEnd(Optional.ofNullable(end)
                 .map(Integer::parseInt)
-                .orElseThrow(() -> new TextParserException(lineNumber.get(), "End position is missing")))
+                .orElseThrow(() -> new TextParserException(getLineNumber(), "End position is missing")))
             .setScore(Optional.ofNullable(score)
                 .map(Float::parseFloat)
                 .orElse(null))

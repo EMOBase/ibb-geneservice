@@ -13,7 +13,7 @@ import ibb.api.geneservice.es.ESDocSourceProvider;
 import ibb.api.geneservice.parser.TextParser;
 import ibb.api.geneservice.utils.DataLoader;
 import ibb.api.geneservice.utils.FileTypeHelper;
-import ibb.api.geneservice.utils.SpeciesHelper;
+import ibb.api.geneservice.utils.Species;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -31,11 +31,11 @@ public class SynonymDocSourceProvider implements ESDocSourceProvider<Synonym> {
     }
 
 	private Stream<ESDocSource<Synonym>> findDocSources(File speciesDir) {
-        String species = speciesDir.getName();
+        Species species = Species.of(speciesDir.getName());
         return Arrays.stream(speciesDir.listFiles(File::isFile))
             .map(file -> {
                 TextParser<Synonym> parser = null;
-                if (SpeciesHelper.isSameSpecies(species, "Dmel")) {
+                if (Objects.equals(species, Species.of("Dmel"))) {
                     if (isFlyBaseSynonymFile(file)) {
                         parser = new FlyBaseSynonymParser(species);
                     } else if (isFlyBaseGeneRNAProteinMapFile(file)) {

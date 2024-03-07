@@ -14,7 +14,7 @@ public class SequenceIndex extends ESSourceIndex<Sequence> {
     boolean shouldDeleteOnStart;
 
     public SequenceIndex() {
-        super("sequence");
+        super("sequence", Sequence.class);
     }
 
 	@Override
