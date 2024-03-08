@@ -1,7 +1,6 @@
 package ibb.api.geneservice.domains.orthology;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -18,9 +17,6 @@ public class OrthologyIndex extends ESSourceIndex<Orthology> {
 
     @ConfigProperty(name = "geneservice.elasticsearch.delete-on-start.orthology", defaultValue = "false")
     boolean shouldDeleteOnStart;
-
-    @ConfigProperty(name = "geneservice.orthologyindex.orthosource-order")
-    Optional<List<String>> orthosourceOrder;
 
     public OrthologyIndex() {
         super("orthology", Orthology.class);

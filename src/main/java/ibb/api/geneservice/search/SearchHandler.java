@@ -12,7 +12,6 @@ import ibb.api.geneservice.domains.orthology.Orthology;
 import ibb.api.geneservice.domains.orthology.OrthologyIndex;
 import ibb.api.geneservice.domains.synonym.Synonym;
 import ibb.api.geneservice.domains.synonym.SynonymIndex;
-import ibb.api.geneservice.domains.synonym.SynonymSuggestResult;
 import ibb.api.geneservice.utils.Species;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -55,8 +54,8 @@ public class SearchHandler {
     @Inject
     OrthologyIndex orthologyIndex;
 
-    public SynonymSuggestResult suggest(String query, List<String> searchAfter) {
-        return synonymIndex.suggest(query, searchAfter);
+    public List<String> suggest(String query) {
+        return synonymIndex.suggest(query);
     }
 
     public SearchResult search(String query) {

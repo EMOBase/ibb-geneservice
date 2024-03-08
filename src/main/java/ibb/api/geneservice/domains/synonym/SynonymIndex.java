@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
@@ -29,7 +28,7 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	@Override
 	protected TypeMapping getTypeMapping() {
         return TypeMapping.of(t -> t
-			.properties("synonym", p -> p.searchAsYouType(s -> s
+			.properties("synonym", p -> p.completion(s -> s
 				.analyzer("whitespace_lowercase")
 				.fields("keyword", k -> k.keyword(kk -> kk))
 			))
@@ -48,18 +47,24 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 		return shouldDeleteOnStart;
 	}
 
-	public SynonymSuggestResult suggest(String query, List<String> searchAfter) {
+	public List<String> suggest(String query) {
 		var requestBuilder = new SearchRequest.Builder()
-			.query(q -> q
-				.matchPhrasePrefix(m -> m
-					.field("synonym")
-					.query(query)
+			.suggest(s -> s
+				.suggesters("suggest", ss -> ss
+					.prefix(query)
+					.completion(c -> c
+						.field("synonym")
+						.size(20)
+						.skipDuplicates(true)
+					)
 				)
 			);
-        if (searchAfter != null && !searchAfter.isEmpty()) {
-            requestBuilder.searchAfter(searchAfter.stream().map(FieldValue::of).toList());
-        }
-        return SynonymSuggestResult.of(search(requestBuilder, 20));
+        var response = search(requestBuilder, 0);
+		return response.suggest().getOrDefault("suggest", List.of())
+			.stream()
+			.flatMap(s -> s.completion().options().stream())
+			.map(o -> o.text())
+			.toList();
 	}
 
 	public List<Synonym> findBySynonym(String synonym) {

@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.jboss.resteasy.reactive.RestQuery;
 
-import ibb.api.geneservice.domains.synonym.SynonymSuggestResult;
 import ibb.api.geneservice.search.SearchHandler.SearchResult;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotBlank;
@@ -24,9 +23,7 @@ public class SearchWebAPI {
 
     @GET
     @Path("/_suggest")
-    public SynonymSuggestResult suggest(
-        @RestQuery @NotBlank String query,
-        @RestQuery List<@NotBlank String> searchAfter) {
-      	return searchHandler.suggest(query, searchAfter);
+    public List<String> suggest(@RestQuery @NotBlank String query) {
+      	return searchHandler.suggest(query);
     }
 }
