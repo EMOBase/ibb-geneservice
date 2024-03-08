@@ -39,6 +39,7 @@ public class FlyBaseGeneRNAProteinMapParser extends TextParser<Synonym> {
         String transcript = cols[1];
 
         var synonyms = new ArrayList<Synonym>();
+        synonyms.add(new Synonym(gene, Synonym.Type.CURRENT_ID, cols[0]));
 
         if (!transcript.isBlank()) {
             synonyms.add(new Synonym(gene, Synonym.Type.TRANSCRIPT, transcript));

@@ -56,6 +56,8 @@ public class FlyBaseSynonymParser extends TextParser<Synonym> {
         List<Synonym> synonyms = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
+        synonyms.add(new Synonym(gene, Synonym.Type.CURRENT_ID, infileGene));
+        seen.add(infileGene);
         if (cols.length > 2) {
             synonyms.add(new Synonym(gene, Synonym.Type.SYMBOL, cols[2]));
             seen.add(cols[2]);

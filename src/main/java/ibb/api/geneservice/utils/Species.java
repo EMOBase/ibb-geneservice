@@ -18,7 +18,15 @@ public class Species {
         return new Species(rawValue);
     }
 
-    private Species(String rawValue) {
+    public static Species ofGene(String gene) {
+        String[] parts = gene.split(":", 2);
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Gene must be in the format 'Species:geneId'");
+        }
+        return new Species(parts[0]);
+    }
+
+    public Species(String rawValue) {
         Objects.requireNonNull(rawValue);
         if (rawValue.length() < 4) {
             throw new IllegalArgumentException("Species must be at least 4 characters long");
@@ -43,6 +51,10 @@ public class Species {
 
     public boolean isGeneFromSpecies(String gene) {
         return gene.startsWith(fourLetterCode + ":");
+    }
+
+    public String removeSpeciesFromGene(String gene) {
+        return gene.replace(fourLetterCode + ":", "");
     }
 
     @JsonValue
