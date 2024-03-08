@@ -31,6 +31,7 @@ public class SearchHandler {
         }
 
         public String group;
+        public String source;
         public List<GeneGroup> orthologs;
     }
 
@@ -125,7 +126,9 @@ public class SearchHandler {
         }
 
         OrthologyWithSynonyms orthologyWithSynonyms = new OrthologyWithSynonyms();
-        orthologyWithSynonyms.group = orthology.group;
+        String[] groupParts = orthology.group.split(":", 2);
+        orthologyWithSynonyms.source = groupParts[0];
+        orthologyWithSynonyms.group = groupParts[1];
         orthologyWithSynonyms.orthologs = speciesToGenes.entrySet().stream()
             .map(e -> {
                 var geneGroup = new OrthologyWithSynonyms.GeneGroup();
