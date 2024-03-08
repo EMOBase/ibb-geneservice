@@ -5,7 +5,6 @@ import java.util.List;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
@@ -51,7 +50,6 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 
 	public SynonymSuggestResult suggest(String query, List<String> searchAfter) {
 		var requestBuilder = new SearchRequest.Builder()
-			.sort(s -> s.field(f -> f.field("synonym.keyword").order(SortOrder.Asc)))
 			.query(q -> q
 				.matchPhrasePrefix(m -> m
 					.field("synonym")
@@ -67,6 +65,6 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	public List<Synonym> findBySynonym(String synonym) {
 		var requestBuilder = new SearchRequest.Builder()
 			.query(q -> q.term(t -> t.field("synonym.keyword").value(synonym)));
-		return search(requestBuilder).hits().hits().stream().map(h -> h.source()).toList();
+		return search(requestBuilder, 1000).hits().hits().stream().map(h -> h.source()).toList();
 	}
 }

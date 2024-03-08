@@ -6,7 +6,6 @@ import org.jboss.resteasy.reactive.RestQuery;
 
 import ibb.api.geneservice.domains.synonym.SynonymSuggestResult;
 import ibb.api.geneservice.search.SearchHandler.SearchResult;
-import ibb.api.geneservice.validator.ZeroOr;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.GET;

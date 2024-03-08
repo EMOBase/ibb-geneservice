@@ -127,7 +127,7 @@ public class SearchHandler {
 
         OrthologyWithSynonyms orthologyWithSynonyms = new OrthologyWithSynonyms();
         String[] groupParts = orthology.group.split(":", 2);
-        orthologyWithSynonyms.source = groupParts[0];
+        orthologyWithSynonyms.source = groupParts[0].split("\\.")[1];
         orthologyWithSynonyms.group = groupParts[1];
         orthologyWithSynonyms.orthologs = speciesToGenes.entrySet().stream()
             .map(e -> {

@@ -110,17 +110,6 @@ public abstract class ESSourceIndex<T extends ESDoc> {
             throw new UncheckedIOException(e);
         }
     }
-    
-    /**
-     * Search with a maximum size of 1000 returned items.
-     * Use this if you expect there are not many results and want to return all of them.
-     * Ortherwise, you have to implement pagination.
-     * @param builder
-     * @return
-     */
-    public SearchResponse<T> search(SearchRequest.Builder builder) {
-        return search(builder, 1000);
-    }
 
     public Optional<T> findById(String id) {
         try {

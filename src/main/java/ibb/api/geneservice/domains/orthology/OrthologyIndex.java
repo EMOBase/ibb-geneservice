@@ -1,10 +1,12 @@
 package ibb.api.geneservice.domains.orthology;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
@@ -16,6 +18,9 @@ public class OrthologyIndex extends ESSourceIndex<Orthology> {
 
     @ConfigProperty(name = "geneservice.elasticsearch.delete-on-start.orthology", defaultValue = "false")
     boolean shouldDeleteOnStart;
+
+    @ConfigProperty(name = "geneservice.orthologyindex.orthosource-order")
+    Optional<List<String>> orthosourceOrder;
 
     public OrthologyIndex() {
         super("orthology", Orthology.class);
@@ -39,7 +44,8 @@ public class OrthologyIndex extends ESSourceIndex<Orthology> {
     public List<Orthology> listByOrthologs(List<String> orthologs) {
         List<FieldValue> terms = orthologs.stream().map(FieldValue::of).toList();
         var requestBuilder = new SearchRequest.Builder()
+            .sort(s -> s.field(f -> f.field("group.keyword").order(SortOrder.Asc)))
             .query(q -> q.terms(t -> t.field("orthologs.keyword").terms(tt -> tt.value(terms))));
-        return search(requestBuilder).hits().hits().stream().map(h -> h.source()).toList();
+        return search(requestBuilder, 1000).hits().hits().stream().map(h -> h.source()).toList();
     }
 }
