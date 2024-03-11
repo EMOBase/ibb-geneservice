@@ -27,7 +27,11 @@ public class GenomicLocationDocSourceProvider implements ESDocSourceProvider<Gen
 
     private Stream<ESDocSource<GenomicLocation>> findGenomicLocationSources(File speciesDir) {
         Species species = Species.of(speciesDir.getName());
-        return Arrays.stream(speciesDir.listFiles(File::isFile))
+        File[] files = speciesDir.listFiles(File::isFile);
+        if (files == null) {
+            return Stream.empty();
+        }
+        return Arrays.stream(files)
             .filter(FileTypeHelper::isGFFFile)
             .map(file -> new ESDocSource<>(file, new GenomicLocationParser(species)));
     }

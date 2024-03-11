@@ -33,7 +33,11 @@ public class SequenceDocSourceProvider implements ESDocSourceProvider<Sequence> 
 
     private Stream<ESDocSource<Sequence>> findSequenceSources(File speciesDir) {
         String species = speciesDir.getName();
-        return Arrays.stream(speciesDir.listFiles(File::isFile))
+        File[] files = speciesDir.listFiles(File::isFile);
+        if (files == null) {
+            return Stream.empty();
+        }
+        return Arrays.stream(files)
             .map(file -> {
                 SequenceParser parser = null;
                 if (isCDSFile(file)) {

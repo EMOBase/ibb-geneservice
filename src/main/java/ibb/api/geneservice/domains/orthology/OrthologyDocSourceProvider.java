@@ -21,6 +21,9 @@ public class OrthologyDocSourceProvider implements ESDocSourceProvider<Orthology
     @Override
     public Stream<ESDocSource<Orthology>> provideDocSources() {
         File[] files = dataLoader.getOrthologyDir().listFiles(File::isFile);
+        if (files == null) {
+            return Stream.empty();
+        }
         return Arrays.stream(files)
             .map(file -> {
                 String orthoPrefix = FileTypeHelper.ignoreSuffix(file.getName(), List.of(".tsv", ".txt"));

@@ -32,7 +32,11 @@ public class SynonymDocSourceProvider implements ESDocSourceProvider<Synonym> {
 
 	private Stream<ESDocSource<Synonym>> findDocSources(File speciesDir) {
         Species species = Species.of(speciesDir.getName());
-        return Arrays.stream(speciesDir.listFiles(File::isFile))
+        File[] files = speciesDir.listFiles(File::isFile);
+        if (files == null) {
+            return Stream.empty();
+        }
+        return Arrays.stream(files)
             .map(file -> {
                 TextParser<Synonym> parser = null;
                 if (Objects.equals(species, Species.of("Dmel"))) {
