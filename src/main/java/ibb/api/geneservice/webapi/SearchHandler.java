@@ -1,4 +1,4 @@
-package ibb.api.geneservice.search;
+package ibb.api.geneservice.webapi;
 
 import java.util.ArrayList;
 import java.util.HashMap;

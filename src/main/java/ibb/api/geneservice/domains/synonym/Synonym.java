@@ -10,6 +10,7 @@ public class Synonym implements ESDoc {
         CURRENT_ID,
         NAME,
         SYMBOL,
+        DSRNA,
         OLD_ID,
         TRANSCRIPT,
         PROTEIN,

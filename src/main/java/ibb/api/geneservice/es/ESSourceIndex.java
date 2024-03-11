@@ -2,6 +2,8 @@ package ibb.api.geneservice.es;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -119,6 +121,30 @@ public abstract class ESSourceIndex<T extends ESDoc> {
             } else {
                 return Optional.empty();
             }
+        } catch (ElasticsearchException e) {
+            Log.debug(e.error().causedBy());
+            throw e;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public List<T> findByIds(List<String> ids) {
+        try {
+            var response = getESClient().mget(m -> m
+                .index(getQueryIndexName())
+                .ids(ids)
+            , docType);
+            return response.docs().stream()
+                .map(d -> {
+                    if (d.isResult()) {
+                        return d.result().source();
+                    } else {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
         } catch (ElasticsearchException e) {
             Log.debug(e.error().causedBy());
             throw e;

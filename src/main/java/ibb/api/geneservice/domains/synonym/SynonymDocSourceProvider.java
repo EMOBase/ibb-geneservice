@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import ibb.api.geneservice.domains.synonym.parser.FlyBaseGeneRNAProteinMapParser;
 import ibb.api.geneservice.domains.synonym.parser.FlyBaseSynonymParser;
 import ibb.api.geneservice.domains.synonym.parser.GFF3SynonymParser;
+import ibb.api.geneservice.domains.synonym.parser.IBTCParser;
 import ibb.api.geneservice.es.ESDocSource;
 import ibb.api.geneservice.es.ESDocSourceProvider;
 import ibb.api.geneservice.parser.TextParser;
@@ -45,6 +46,10 @@ public class SynonymDocSourceProvider implements ESDocSourceProvider<Synonym> {
                     } else if (isFlyBaseGeneRNAProteinMapFile(file)) {
                         parser = new FlyBaseGeneRNAProteinMapParser(species);
                     }
+                } else if (Objects.equals(species, Species.of("Tcas"))) {
+                    if (isIBTCMapFile(file)) {
+                        parser = new IBTCParser(species);
+                    }
                 }
                 if (FileTypeHelper.isGFFFile(file)) {
                     parser = new GFF3SynonymParser(species);
@@ -63,5 +68,9 @@ public class SynonymDocSourceProvider implements ESDocSourceProvider<Synonym> {
 
     private boolean isFlyBaseGeneRNAProteinMapFile(File file) {
         return file.getName().toLowerCase().startsWith("fbgn_fbtr_fbpp");
+    }
+
+    private boolean isIBTCMapFile(File file) {
+        return file.getName().toLowerCase().startsWith("ib_tc");
     }
 }
