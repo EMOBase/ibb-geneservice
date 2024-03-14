@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettingsAnalysis;
@@ -70,6 +71,24 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	public List<Synonym> findBySynonym(String synonym) {
 		var requestBuilder = new SearchRequest.Builder()
 			.query(q -> q.term(t -> t.field("synonym.keyword").value(synonym)));
+		return search(requestBuilder, 1000).hits().hits().stream().map(h -> h.source()).toList();
+	}
+
+	public List<Synonym> findBySynonyms(List<String> synonyms) {
+		var requestBuilder = new SearchRequest.Builder()
+			.query(q -> q.terms(t -> t
+				.field("synonym.keyword")
+				.terms(tt -> tt.value(synonyms.stream().map(FieldValue::of).toList()))
+			));
+		return search(requestBuilder, 1000).hits().hits().stream().map(h -> h.source()).toList();
+	}
+
+	public List<Synonym> findByGenes(List<String> genes) {
+		var requestBuilder = new SearchRequest.Builder()
+			.query(q -> q.terms(t -> t
+				.field("gene.keyword")
+				.terms(tt -> tt.value(genes.stream().map(FieldValue::of).toList()))
+			));
 		return search(requestBuilder, 1000).hits().hits().stream().map(h -> h.source()).toList();
 	}
 }
