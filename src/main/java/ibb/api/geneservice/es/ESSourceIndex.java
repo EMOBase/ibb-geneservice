@@ -130,6 +130,9 @@ public abstract class ESSourceIndex<T extends ESDoc> {
     }
 
     public List<T> findByIds(List<String> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
         try {
             var response = getESClient().mget(m -> m
                 .index(getQueryIndexName())
