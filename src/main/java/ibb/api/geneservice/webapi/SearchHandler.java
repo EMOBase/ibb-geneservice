@@ -59,7 +59,7 @@ public class SearchHandler {
     }
 
     public SearchResult search(String query) {
-        Map<Boolean, List<Synonym>> synonyms = synonymIndex.findBySynonym(query)
+        Map<Boolean, List<Synonym>> synonyms = synonymIndex.findBySynonymRelaxed(query)
             .stream()
             .collect(Collectors.groupingBy(s -> mainSpecies.isGeneFromSpecies(s.gene), Collectors.toList()));
 
