@@ -32,7 +32,7 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	protected TypeMapping getTypeMapping() {
         return TypeMapping.of(t -> t
 			.properties("synonym", p -> p.text(tt -> tt
-				.analyzer("synonym_strict_analyzer")
+				.analyzer("synonym_analyzer")
 				.fields("keyword", k -> k.keyword(kk -> kk))
 				.fields("suggest", k -> k.completion(s -> s
 					.contexts(c -> c
@@ -40,7 +40,7 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 						.type("category")
 						.path("type")
 					)
-					.analyzer("synonym_relaxed_analyzer")
+					.analyzer("synonym_analyzer")
 				))
 			))
 		);
@@ -49,21 +49,19 @@ public class SynonymIndex extends ESSourceIndex<Synonym> {
 	@Override
 	protected IndexSettingsAnalysis getAnalysis() {
         return IndexSettingsAnalysis.of(a -> a
-			.analyzer("synonym_relaxed_analyzer", aa -> aa
-				.custom(c -> c
-					.tokenizer("synonym_tokenizer")
-					.filter("lowercase")
-				)
-			)
-			.analyzer("synonym_strict_analyzer", aa -> aa
+			.analyzer("synonym_analyzer", aa -> aa
 				.custom(c -> c
 					.tokenizer("keyword")
 					.filter("lowercase")
+					.filter("synonym_filter")
 				)
 			)
-			.tokenizer("synonym_tokenizer", t -> t.definition(d -> d
-				.charGroup(c -> c.tokenizeOnChars("whitespace", "-")))
-			)
+			.filter("synonym_filter", f -> f.definition(d -> d
+				.patternReplace(p -> p
+					.pattern("-")
+					.replacement(" ")
+					.all(true))
+			))
         );
 	}
 
