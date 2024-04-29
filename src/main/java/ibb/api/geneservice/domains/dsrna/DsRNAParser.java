@@ -34,10 +34,10 @@ public class DsRNAParser extends TextParser<DsRNA> {
         dsRNA.seq = cols[1].trim();
 
         if (cols.length > 2) {
-            dsRNA.leftPrimer = cols[1].trim();
+            dsRNA.leftPrimer = cols[2].trim();
         }
         if (cols.length > 3) {
-            dsRNA.rightPrimer = cols[2].trim();
+            dsRNA.rightPrimer = cols[3].trim();
         }
         return dsRNA;
     }
