@@ -1,4 +1,4 @@
-# Gene Service for the iBeetle-Base project
+# Gene Service for iBeetle-Base
 
 ## Development
 
@@ -14,18 +14,11 @@ These commands might be useful after a long time not working on this project:
 
 - `quarkus update`: Update all quarkus dependencies to latest versions
 - `./mvnw -N wrapper:wrapper -Dmaven=3.8.7`: Update maven wrapper to new version, in this case `3.8.7`
-- `quarkus test`: Ensure all the tests still pass
 
 ## Deployment
 
-To run tests and build docker image:
+Set the new version in `pom.xml`, then build the docker image:
 ```
-quarkus build -Dquarkus.container-image.build=true
-```
-
-To run the same thing as above but in 2 commands:
-```
-quarkus test --once
 quarkus build -Dquarkus.container-image.build=true -DskipTests
 ```
 
