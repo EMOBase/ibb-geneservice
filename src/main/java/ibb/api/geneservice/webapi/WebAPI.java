@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
@@ -65,6 +66,9 @@ public class WebAPI {
 
     @Inject
     SequenceIndex sequenceIndex;
+
+    @ConfigProperty(name = "geneservice.main-species")
+    Species mainSpecies;
 
     @GET
     @Path("/search")
@@ -212,7 +216,7 @@ public class WebAPI {
     })
     public List<TriboliumGene> getTriboliumGenes(@DefaultValue("") @QueryParam("ids") String ids) {
         Set<String> idSet = trimAndSplit(ids, HashSet::new);
-        Species species = Species.of("Tcas");
+        Species species = mainSpecies;
         List<Synonym> synonyms = synonymIndex.findBySynonyms(idSet.stream().toList());
 
         List<String> genes = synonyms.stream()

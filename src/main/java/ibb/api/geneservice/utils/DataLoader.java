@@ -16,7 +16,7 @@ public class DataLoader {
     String dataDir;
 
     public Stream<File> listSpeciesDirs() {
-        return Arrays.stream(Path.of(dataDir, "species").toFile().listFiles(File::isDirectory));
+        return Arrays.stream(Path.of(dataDir, "genomic").toFile().listFiles(File::isDirectory));
     }
 
     public File getOrthologyDir() {

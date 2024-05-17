@@ -17,9 +17,9 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class SequenceDocSourceProvider implements ESDocSourceProvider<Sequence> {
 
-    private static final List<String> CDS_SUFFICES = List.of("_cds");
-    private static final List<String> TRANSCRIPT_SUFFICES = List.of("_rna", "_mrna", "_rnas", "_mrnas");
-    private static final List<String> PROTEIN_SUFFICES = List.of("_protein", "_proteins");
+    private static final List<String> CDS_SUFFICES = List.of("cds", "cds_from_genomic");
+    private static final List<String> TRANSCRIPT_SUFFICES = List.of("rna", "mrna", "rnas", "mrnas");
+    private static final List<String> PROTEIN_SUFFICES = List.of("protein", "proteins");
 
     @Inject
     DataLoader dataLoader;
