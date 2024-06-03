@@ -47,7 +47,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 
 @Path("/")
-public class WebAPI {
+public class API {
     
     @Inject
     SearchHandler searchHandler;
@@ -72,18 +72,40 @@ public class WebAPI {
 
     @GET
     @Path("/search")
+    @Operation(hidden = true)
     public SearchResult search(@RestQuery @NotBlank String query) {
         return searchHandler.search(query);
     }
 
     @GET
     @Path("/search/_suggest")
+    @Operation(hidden = true)
     public List<String> suggest(@RestQuery @NotBlank String query) {
       	return searchHandler.suggest(query);
     }
 
     @GET
+    @Path("/orthology/{species}")
+    @Operation(summary = "Get orthology for genes in a species")
+    @Parameters({
+        @Parameter(name = "species",
+                description = "4-letter code of the species", 
+                example = "Tcas"),
+        @Parameter(name = "genes",
+                description = "comma-separated list of gene ids",
+                example = "TC003413,TC000291")
+    })
+    public List<GroupedOrthology> getOrthologyBySpecies(
+        @RestPath @NotBlank String species,
+        @RestQuery @NotBlank String genes,
+        @RestQuery @DefaultValue("all") String source) {
+        List<String> queries = trimAndSplit(genes, ArrayList::new);
+        return getOrthology(Species.of(species), source, queries);
+    }
+
+    @GET
     @Path("/datasources/{source}/drosophila/genes")
+    @Operation(hidden = true)
     public List<GroupedOrthology> getOrthologyByDrosophilaGenes(@RestPath @NotBlank String source, @RestQuery @NotBlank String geneIds) {
         Species species = Species.of("Dmel");
         List<String> queries = trimAndSplit(geneIds, ArrayList::new);
@@ -92,15 +114,16 @@ public class WebAPI {
 
     @GET
     @Path("/datasources/{source}/tribolium/genes")
+    @Operation(hidden = true)
     public List<GroupedOrthology> getOrthologyByTriboliumGenes(@RestPath @NotBlank String source, @RestQuery @NotBlank String geneIds) {
-        Species species = Species.of("Tcas");
+        Species species = mainSpecies;
         List<String> queries = trimAndSplit(geneIds, ArrayList::new);
         return getOrthology(species, source, queries);
     }
 
     @GET
     @Path("/silencingseqs")
-    @Operation(summary = "Find a list of silencing sequences (iB fragments)")
+    @Operation(summary = "Query dsRNAs (iB number) used in iBeetle screen")
     @Parameters({
         @Parameter(name = "geneIds",
                 description = "Find sequences that match these genes (comma-separated). Should not be used together with param \"ids\"", 
@@ -129,12 +152,15 @@ public class WebAPI {
 
     @GET
     @Path("/drosophila/genes")
-    @Operation(summary = "Get information of a list of drosophila genes")
+    @Operation(
+        summary = "Query information for drosophila genes based on gene identifiers, gene symbols, gene full names, or annotation IDs",
+        description = "One and only one query param is allowed"
+    )
     @Parameters({
         @Parameter(name = "ids", description = "Comma-separated list of Drosophila gene identifiers in format FBgn[0-9]{7}", example = "FBgn0000015,FBgn0000008"),
-        @Parameter(name = "symbol"),
-        @Parameter(name = "fullname"),
-        @Parameter(name = "annotationId")
+        @Parameter(name = "symbol", description = "Gene symbol"),
+        @Parameter(name = "fullname", description = "Gene name"),
+        @Parameter(name = "annotationId", description = "Flybase annotation ID (CG number)")
     })
     public List<DrosophilaGene> getDrosophilaGenes(
         @DefaultValue("") @QueryParam("ids") String ids,
@@ -210,7 +236,7 @@ public class WebAPI {
 
     @GET
     @Path("/tribolium/genes")
-    @Operation(summary = "Get information of a list of tribolium genes")
+    @Operation(summary = "Query information for tribolium genes based on gene identifiers")
     @Parameters({
         @Parameter(name = "ids", description = "Comma-separated list of Tribolium gene identifiers in format TC[0-9]{6}}", example = "TC016177,TC001906")
     })
