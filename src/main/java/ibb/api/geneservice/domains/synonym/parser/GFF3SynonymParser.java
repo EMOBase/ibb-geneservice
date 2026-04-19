@@ -152,8 +152,8 @@ public class GFF3SynonymParser extends TextParser<Synonym> {
                         });
                         break;
                     case "CDS":
-                        if (!mRNALocalIds.contains(record.getParentId())) {
-                            throw new TextParserException(gff3Parser.getLineNumber(), "CDS must have an mRNA parent declared before it");
+                        if (!mRNALocalIds.contains(record.getParentId()) && !Objects.equals(geneLocalId, record.getParentId())) {
+                            throw new TextParserException(gff3Parser.getLineNumber(), "CDS must have an mRNA or gene parent declared before it");
                         }
                         record.getAttributeFirstValueOptional("protein_id").ifPresent(allIds -> {
                             parseProteinId(allIds).stream().forEach(proteinXrefIds::add);
