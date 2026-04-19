@@ -103,6 +103,7 @@ public abstract class ESSourceIndex<T extends ESDoc> {
             return getESClient().search(builder
                 .size(size)
                 .index(getQueryIndexName())
+                .ignoreUnavailable(true)
                 .build()
             , docType);
         } catch (ElasticsearchException e) {
