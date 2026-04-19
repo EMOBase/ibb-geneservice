@@ -24,6 +24,16 @@ public interface GFF3GeneIDFinder {
         };
     }
 
+    public static GFF3GeneIDFinder byLocusTag() {
+        return record -> {
+            Optional<String> current = record.getAttributeFirstValueOptional("locus_tag");
+            if (current.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(new GFF3GeneID(current.get(), List.of()));
+        };
+    }
+
     public static GFF3GeneIDFinder byTCLocusTag() {
         return record -> {
             Pattern pattern = Pattern.compile("TC[0-9]{6}");

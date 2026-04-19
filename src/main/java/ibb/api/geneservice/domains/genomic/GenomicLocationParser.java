@@ -20,6 +20,8 @@ public class GenomicLocationParser extends TextParser<GenomicLocation> {
         this.species = species;
         if (Objects.equals(species, Species.of("Tcas"))) {
             gff3GeneIDFinder = GFF3GeneIDFinder.byTCLocusTag();
+        } else if (Objects.equals(species, Species.of("Lyst"))) {
+            gff3GeneIDFinder = GFF3GeneIDFinder.byLocusTag();
         } else {
             gff3GeneIDFinder = GFF3GeneIDFinder.byNCBIGeneID();
         }
